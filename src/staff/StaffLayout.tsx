@@ -33,6 +33,7 @@ function Cadre() {
           <div className="staff-nav-liens">
             <NavLink to="/formateur/groupes">Mes groupes</NavLink>
             <NavLink to="/formateur/fiches">Fiches</NavLink>
+            {estAdmin(moi) && <NavLink to="/formateur/camp">Camp et élèves</NavLink>}
             {estAdmin(moi) && (
               <NavLink to="/formateur/validation">
                 À valider{aValider > 0 && <span className="pastille" aria-label={`${aValider} en attente`}>{aValider}</span>}

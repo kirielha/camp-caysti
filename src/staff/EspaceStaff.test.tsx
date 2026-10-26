@@ -61,7 +61,7 @@ describe('espace formateur', () => {
     await screen.findByRole('heading', { name: 'Prétest — Mon premier robot' })
     const lignes = await screen.findAllByRole('row')
     expect(lignes).toHaveLength(12) // en-tête + 11 élèves
-    expect(lignes[1].textContent).toContain('Fatou Camara') // meilleur score en tête
+    expect(lignes[1].textContent).toContain('Fatou CAMARA') // meilleur score en tête
     expect(lignes[1].textContent).toContain('7/8')
     expect(screen.getAllByText('Pas commencé')).toHaveLength(3)
 

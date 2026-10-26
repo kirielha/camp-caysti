@@ -20,6 +20,8 @@ const ID = {
   atelierRobot: u(20), groupeA: u(21), atelier3d: u(22), groupeB: u(23),
   formateur: u(30), formatrice3d: u(31), superAdmin: u(32), adminCamp: u(33),
   ficheSecurite: u(107),
+  ecoleTokoin: u(70), ecoleBe: u(71), ecoleAdido: u(72),
+  langFr: u(80), langEn: u(81), langEwe: u(82), langMina: u(83), langKabye: u(84), langAutre: u(85),
   compCapteur: u(40), compActionneur: u(41), compRobot: u(42),
   compFabrication: u(43), compMateriau: u(44), compChaine: u(45), compProjet: u(46),
   fichePreRobot: u(100), ficheQuizRobot: u(101), fichePostRobot: u(102),
@@ -30,7 +32,7 @@ const ID = {
 export const CODES_DEMO = ['AMA234', 'YAW567', 'KEM789']
 
 /** À incrémenter à chaque changement des données de démo : les navigateurs les rechargent alors. */
-const VERSION_DEMO = '5'
+const VERSION_DEMO = '6'
 const CLE_VERSION = 'camp-caysti:version-demo'
 
 export async function seedSiVide(db: BaseCamp) {
@@ -313,8 +315,17 @@ async function seed(db: BaseCamp) {
     ['LAWSN5', 'Abla', 'Lawson', 'F', '2013-12-02', '6e'],
     ['NUBKP7', 'Sena', 'Nubukpo', 'M', '2014-07-07', 'CM2'],
   ].map(([code, prenom, nom, sexe, naissance, classe], i) => ({
-    id: u(1000 + i), code_acces: code, prenom, nom, sexe: sexe as Eleve['sexe'],
+    id: u(1000 + i), code_acces: code, prenom, nom: nom.toUpperCase(), sexe: sexe as Eleve['sexe'],
     date_naissance: naissance, classe: classe as Eleve['classe'], langue_interface: 'fr',
+    ecole_id: [ID.ecoleTokoin, ID.ecoleBe, ID.ecoleAdido][i % 3],
+    langue_id: [ID.langEwe, ID.langFr, ID.langMina, ID.langKabye][i % 4],
+  }))
+  const tuteurs = eleves.map((e, i) => ({
+    id: u(7000 + i), nom: `${['Mme', 'M.'][i % 2]} ${e.nom}`, lien: ['mère', 'père'][i % 2],
+    telephone: `+228 90 ${String(10 + i).padStart(2, '0')} ${String(20 + i * 3).padStart(2, '0')} ${String(30 + i).padStart(2, '0')}`,
+    whatsapp: i % 3 === 0 ? undefined : `+228 91 ${String(40 + i).padStart(2, '0')} ${String(11 + i).padStart(2, '0')} 00`,
+    email: i % 2 === 0 ? `parent.${e.prenom.toLowerCase()}@exemple.tg` : undefined,
+    consentement_le: '2026-11-15T10:00:00Z', consentement_mode: 'autorisation signée',
   }))
 
   // Camarades ayant déjà passé certains tests (pour des classements vivants)
@@ -377,6 +388,21 @@ async function seed(db: BaseCamp) {
         { id: u(2001 + i * 2), eleve_id: e.id, groupe_id: ID.groupeB, inscrit_le: '2026-11-20T10:00:00Z' },
       ]),
     )
+    await db.ecole.bulkAdd([
+      { id: ID.ecoleTokoin, nom: 'Lycée de Tokoin', type: 'public' },
+      { id: ID.ecoleBe, nom: 'CEG Bè', type: 'public' },
+      { id: ID.ecoleAdido, nom: 'Complexe scolaire Adidogomé', type: 'prive' },
+    ])
+    await db.langue.bulkAdd([
+      { id: ID.langFr, libelle_fr: 'Français', libelle_en: 'French', est_autre: false, ordre: 0 },
+      { id: ID.langEn, libelle_fr: 'Anglais', libelle_en: 'English', est_autre: false, ordre: 1 },
+      { id: ID.langEwe, libelle_fr: 'Éwé', libelle_en: 'Ewe', est_autre: false, ordre: 2 },
+      { id: ID.langMina, libelle_fr: 'Mina', libelle_en: 'Mina', est_autre: false, ordre: 3 },
+      { id: ID.langKabye, libelle_fr: 'Kabyè', libelle_en: 'Kabiye', est_autre: false, ordre: 4 },
+      { id: ID.langAutre, libelle_fr: 'Autre', libelle_en: 'Other', est_autre: true, ordre: 99 },
+    ])
+    await db.tuteur.bulkAdd(tuteurs)
+    await db.eleve_tuteur.bulkAdd(eleves.map((e, i) => ({ eleve_id: e.id, tuteur_id: tuteurs[i].id, tuteur_principal: true })))
     await db.utilisateur.bulkAdd(personnel)
     await db.attribution_role.bulkAdd(roles)
     await db.groupe_formateur.bulkAdd(affectations)

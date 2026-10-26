@@ -457,3 +457,42 @@ button, input, textarea { font: inherit; color: inherit; }
 .carte-validation { display: grid; gap: 4px; justify-items: start; padding: 16px 18px; background: var(--blanc); border-radius: var(--rayon); text-decoration: none; color: var(--encre); border-left: 6px solid var(--soleil); }
 .carte-validation-titre { font-family: var(--titre); font-weight: 700; font-size: 1.25rem; }
 .carte-validation:hover .carte-validation-titre { text-decoration: underline; }
+
+/* ---------- Gestion du camp ---------- */
+.onglets { display: flex; gap: 4px; flex-wrap: wrap; margin: 18px 0 16px; border-bottom: 2px solid var(--ciel-fonce); }
+.onglets button {
+  border: 0; background: none; padding: 0 16px; min-height: 46px; font-weight: 600; cursor: pointer; color: var(--encre-douce);
+  border-bottom: 4px solid transparent; margin-bottom: -2px;
+}
+.onglets button[aria-selected='true'] { color: var(--encre); border-bottom-color: var(--bleu); }
+.onglet-contenu { display: grid; gap: 14px; }
+.bloc-gestion { --techno: var(--bleu); padding: 16px 18px; background: var(--blanc); border-radius: var(--rayon); }
+article.bloc-gestion { border-top: 8px solid var(--techno); }
+.bloc-gestion-entete { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.bloc-gestion-entete .titre-m { margin: 0; }
+.bloc-gestion-entete .aide { margin: 0; }
+.groupes-gestion { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
+.groupe-gestion { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--rayon-petit); background: var(--ciel); }
+.groupe-gestion .aide { margin: 2px 0 0; }
+.groupe-gestion-titre { margin: 0; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.groupe-gestion-actions { display: flex; gap: 12px; align-items: center; }
+.majuscule::first-letter { text-transform: uppercase; }
+.formulaire { display: grid; gap: 10px; }
+.formulaire .titre-m { margin: 0; }
+.formulaire-groupe { margin-top: 12px; padding: 14px; border-radius: var(--rayon-petit); background: var(--ciel); }
+.formulaire-groupe .champ { background: var(--blanc); }
+.sous-titre { margin: 10px 0 0; font-size: 1rem; font-weight: 700; }
+.cases { border: 0; padding: 0; margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.cases legend { font-weight: 700; margin-bottom: 4px; padding: 0; }
+fieldset.bloc-gestion { padding: 16px 18px; }
+fieldset.bloc-gestion legend { float: left; width: 100%; }
+.actions-formulaire { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; }
+.puce-groupe { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border-radius: 999px; background: var(--ciel); font-size: 0.82rem; white-space: nowrap; }
+.tableau .contact { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.etapes-import { margin: 0; padding-left: 1.4em; display: grid; gap: 18px; max-width: 70ch; }
+.etapes-import li { display: grid; gap: 8px; justify-items: start; }
+.bouton-fichier { cursor: pointer; }
+.tableau-import td { vertical-align: top; }
+.ligne-erreur td { background: #fdeeee; }
+.chiffre-alerte dd { color: var(--corail); }

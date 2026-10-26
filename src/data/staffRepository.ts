@@ -1,9 +1,10 @@
 // Contrat d'accès aux données de l'espace personnel (formateurs et admins).
 // Comme pour l'espace élève, les écrans ne dépendent que de ce contrat.
 
+import type { LigneImport } from '../lib/importEleves'
 import type {
-  Camp, Choix, Competence, DetailGroupe, Fiche, GroupePourFormateur, LigneResultat, Personnel,
-  Question, StatutGroupe, StatutSession, Technologie,
+  Atelier, AtelierDuCamp, Camp, Choix, Competence, DetailGroupe, Ecole, Eleve, EleveDuCamp, Fiche, Groupe,
+  GroupePourFormateur, LangueParlee, LigneResultat, Personnel, Question, StatutGroupe, StatutSession, Technologie, Tuteur, Utilisateur,
 } from '../types'
 
 /** Question telle qu'éditée dans l'éditeur de fiches (avec ses choix). */
@@ -62,6 +63,23 @@ export interface StaffRepository {
   validerFiche(ficheId: string, personnel: Personnel): Promise<void>
   refuserFiche(ficheId: string, commentaire: string, personnel: Personnel): Promise<void>
   supprimerFiche(ficheId: string, personnel: Personnel): Promise<void>
+
+  // ---------- Gestion du camp (admins) ----------
+  structureCamp(campId: string): Promise<AtelierDuCamp[]>
+  enregistrerAtelier(atelier: Atelier, personnel: Personnel): Promise<void>
+  /** Crée ou met à jour un groupe et remplace la liste de ses formateurs. */
+  enregistrerGroupe(groupe: Omit<Groupe, 'statut'> & { statut?: Groupe['statut'] }, formateurs: { utilisateur_id: string; role: 'principal' | 'secondaire' }[], personnel: Personnel): Promise<void>
+  supprimerGroupe(groupeId: string, personnel: Personnel): Promise<void>
+  formateurs(): Promise<Utilisateur[]>
+  elevesDuCamp(campId: string): Promise<EleveDuCamp[]>
+  /** Crée ou met à jour un élève, son parent, et remplace ses inscriptions aux groupes de ce camp. */
+  enregistrerEleve(campId: string, saisie: { eleve: Omit<Eleve, 'code_acces'> & { code_acces?: string }; tuteur: Omit<Tuteur, 'id'> & { id?: string }; groupeIds: string[] }, personnel: Personnel): Promise<Eleve>
+  /** Importe les lignes valides : crée les nouveaux élèves, rattache ceux déjà connus, les inscrit aux groupes choisis. */
+  importerEleves(campId: string, lignes: LigneImport[], groupeIds: string[], fichier: string, personnel: Personnel): Promise<{ crees: Eleve[]; rattaches: Eleve[] }>
+  ecoles(): Promise<Ecole[]>
+  langues(): Promise<LangueParlee[]>
+  /** Élèves déjà connus (tous camps), pour reconnaître ceux qui reviennent lors d'un import. */
+  identitesEleves(): Promise<Pick<Eleve, 'id' | 'nom' | 'prenom' | 'date_naissance'>[]>
 
   // ---------- Référentiels ----------
   technologies(): Promise<Technologie[]>

@@ -1,7 +1,8 @@
 import { estAdmin, estAdminCamp, ficheVisible, nomComplet, peutModifierFiche, peutProgrammer, peutValider } from '../lib/droits'
 import { nouvelId } from '../lib/ids'
+import { genererCode, normaliser } from '../lib/importEleves'
 import { totaliser } from '../lib/scoring'
-import type { Choix, Eleve, Fiche, GroupePourFormateur, Personnel, Question, Utilisateur } from '../types'
+import type { AtelierDuCamp, Choix, Eleve, EleveDuCamp, Fiche, GroupePourFormateur, Personnel, Question, Utilisateur } from '../types'
 import type { BaseCamp } from './db'
 import { ErreurDroits, type FicheEditable, type StaffRepository } from './staffRepository'
 
@@ -46,6 +47,18 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
 
   async function nbQuestions(ficheId: string) {
     return db.fiche_question.where('fiche_id').equals(ficheId).count()
+  }
+
+  /** Remplace les inscriptions d'un élève aux groupes de ce camp (les autres camps ne sont pas touchés). */
+  async function remplacerInscriptions(eleveId: string, campId: string, groupeIds: string[]) {
+    const ateliers = await db.atelier.where('camp_id').equals(campId).primaryKeys()
+    const groupesDuCamp = new Set(await db.groupe.where('atelier_id').anyOf(ateliers).primaryKeys())
+    const actuelles = (await db.inscription.where('eleve_id').equals(eleveId).toArray()).filter((i) => groupesDuCamp.has(i.groupe_id))
+    const voulues = new Set(groupeIds.filter((g) => groupesDuCamp.has(g)))
+    for (const i of actuelles) if (!voulues.has(i.groupe_id)) await db.inscription.delete(i.id)
+    for (const g of voulues) {
+      if (!actuelles.some((i) => i.groupe_id === g)) await db.inscription.add({ id: nouvelId(), eleve_id: eleveId, groupe_id: g, inscrit_le: maintenant() })
+    }
   }
 
   const repo: StaffRepository = {
@@ -311,6 +324,181 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
         }
         await db.fiche.delete(ficheId)
       })
+    },
+
+    // ---------------------------------------------------------------- Gestion du camp
+    async structureCamp(campId) {
+      const ateliers = await db.atelier.where('camp_id').equals(campId).toArray()
+      const resultat: AtelierDuCamp[] = []
+      for (const atelier of ateliers) {
+        const technologie = await db.technologie.get(atelier.technologie_id)
+        if (!technologie) continue
+        const groupes = (await db.groupe.where('atelier_id').equals(atelier.id).toArray())
+          .sort((a, b) => `${a.date} ${a.heure_debut}`.localeCompare(`${b.date} ${b.heure_debut}`))
+        resultat.push({
+          atelier, technologie,
+          groupes: await Promise.all(groupes.map(async (groupe) => {
+            const aff = await db.groupe_formateur.where('groupe_id').equals(groupe.id).toArray()
+            const formateurs = (await Promise.all(aff.map(async (a) => {
+              const utilisateur = await db.utilisateur.get(a.utilisateur_id)
+              return utilisateur && { utilisateur, role: a.role }
+            }))).filter((x): x is { utilisateur: Utilisateur; role: 'principal' | 'secondaire' } => !!x)
+            return { groupe, formateurs, nb_eleves: await db.inscription.where('groupe_id').equals(groupe.id).count() }
+          })),
+        })
+      }
+      return resultat.sort((a, b) => (a.groupes[0] ? `${a.groupes[0].groupe.date} ${a.groupes[0].groupe.heure_debut}` : 'z')
+        .localeCompare(b.groupes[0] ? `${b.groupes[0].groupe.date} ${b.groupes[0].groupe.heure_debut}` : 'z'))
+    },
+
+    async enregistrerAtelier(atelier, p) {
+      if (!estAdminCamp(p, atelier.camp_id)) throw new ErreurDroits('Seul un admin du camp gère les ateliers')
+      if (!atelier.titre_fr.trim()) throw new ErreurDroits('Donnez un titre à l’atelier')
+      await db.atelier.put({ ...atelier, titre_fr: atelier.titre_fr.trim() })
+    },
+
+    async enregistrerGroupe(groupe, formateurs, p) {
+      const atelier = await db.atelier.get(groupe.atelier_id)
+      if (!atelier || !estAdminCamp(p, atelier.camp_id)) throw new ErreurDroits('Seul un admin du camp gère les groupes')
+      if (!groupe.nom.trim()) throw new ErreurDroits('Donnez un nom au groupe')
+      if (groupe.heure_fin <= groupe.heure_debut) throw new ErreurDroits('L’heure de fin doit être après l’heure de début')
+      if (formateurs.filter((f) => f.role === 'principal').length > 1) throw new ErreurDroits('Un groupe n’a qu’un formateur principal')
+      const avant = await db.groupe.get(groupe.id)
+      await db.transaction('rw', [db.groupe, db.groupe_formateur], async () => {
+        await db.groupe.put({ ...groupe, nom: groupe.nom.trim(), statut: groupe.statut ?? avant?.statut ?? 'a_venir' })
+        await db.groupe_formateur.where('groupe_id').equals(groupe.id).delete()
+        const uniques = new Map(formateurs.map((f) => [f.utilisateur_id, f]))
+        await db.groupe_formateur.bulkAdd([...uniques.values()].map((f) => ({ id: nouvelId(), groupe_id: groupe.id, ...f })))
+      })
+    },
+
+    async supprimerGroupe(groupeId, p) {
+      const { camp } = await contexteGroupe(groupeId)
+      if (!estAdminCamp(p, camp.id)) throw new ErreurDroits('Seul un admin du camp supprime un groupe')
+      const sessions = await db.session_evaluation.where('groupe_id').equals(groupeId).toArray()
+      if (await db.tentative.where('session_id').anyOf(sessions.map((s) => s.id)).count()) {
+        throw new ErreurDroits('Des élèves ont déjà passé des activités dans ce groupe : il ne peut plus être supprimé')
+      }
+      await db.transaction('rw', [db.groupe, db.groupe_formateur, db.inscription, db.session_evaluation], async () => {
+        await db.groupe_formateur.where('groupe_id').equals(groupeId).delete()
+        await db.inscription.where('groupe_id').equals(groupeId).delete()
+        await db.session_evaluation.where('groupe_id').equals(groupeId).delete()
+        await db.groupe.delete(groupeId)
+      })
+    },
+
+    async formateurs() {
+      const roles = await db.attribution_role.toArray()
+      const ids = new Set(roles.filter((r) => r.role === 'formateur' || r.role === 'admin_camp' || r.role === 'super_admin').map((r) => r.utilisateur_id))
+      return (await db.utilisateur.toArray()).filter((u) => u.actif && ids.has(u.id)).sort((a, b) => a.nom.localeCompare(b.nom))
+    },
+
+    async elevesDuCamp(campId) {
+      const ateliers = await db.atelier.where('camp_id').equals(campId).toArray()
+      const groupes = await db.groupe.where('atelier_id').anyOf(ateliers.map((a) => a.id)).toArray()
+      const inscriptions = await db.inscription.where('groupe_id').anyOf(groupes.map((g) => g.id)).toArray()
+      const parEleve = new Map<string, string[]>()
+      for (const i of inscriptions) parEleve.set(i.eleve_id, [...(parEleve.get(i.eleve_id) ?? []), i.groupe_id])
+      const resultat: EleveDuCamp[] = []
+      for (const [eleveId, gids] of parEleve) {
+        const eleve = await db.eleve.get(eleveId)
+        if (!eleve) continue
+        const lien = await db.eleve_tuteur.where('eleve_id').equals(eleveId).filter((l) => l.tuteur_principal).first()
+          ?? await db.eleve_tuteur.where('eleve_id').equals(eleveId).first()
+        resultat.push({
+          eleve,
+          ecole: eleve.ecole_id ? await db.ecole.get(eleve.ecole_id) : undefined,
+          tuteur: lien ? await db.tuteur.get(lien.tuteur_id) : undefined,
+          groupes: gids.map((gid) => {
+            const groupe = groupes.find((g) => g.id === gid)!
+            return { groupe, atelier: ateliers.find((a) => a.id === groupe.atelier_id)! }
+          }).sort((a, b) => `${a.groupe.date} ${a.groupe.heure_debut}`.localeCompare(`${b.groupe.date} ${b.groupe.heure_debut}`)),
+        })
+      }
+      return resultat.sort((a, b) => a.eleve.nom.localeCompare(b.eleve.nom) || a.eleve.prenom.localeCompare(b.eleve.prenom))
+    },
+
+    async enregistrerEleve(campId, { eleve, tuteur, groupeIds }, p) {
+      if (!estAdminCamp(p, campId)) throw new ErreurDroits('Seul un admin du camp inscrit des élèves')
+      if (!eleve.nom.trim() || !eleve.prenom.trim()) throw new ErreurDroits('Nom et prénom sont obligatoires')
+      if (!eleve.date_naissance) throw new ErreurDroits('La date de naissance est obligatoire')
+      if (!tuteur.telephone && !tuteur.whatsapp && !tuteur.email) throw new ErreurDroits('Indiquez au moins un contact du parent')
+      const existant = await db.eleve.get(eleve.id)
+      const codes = new Set((await db.eleve.toArray()).map((e) => e.code_acces))
+      const complet: Eleve = {
+        ...eleve, nom: eleve.nom.trim().toUpperCase(), prenom: eleve.prenom.trim(),
+        code_acces: existant?.code_acces ?? genererCode((c) => codes.has(c)),
+      }
+      await db.transaction('rw', [db.eleve, db.tuteur, db.eleve_tuteur, db.inscription, db.groupe, db.atelier], async () => {
+        await db.eleve.put(complet)
+        const tuteurId = tuteur.id ?? nouvelId()
+        await db.tuteur.put({ ...tuteur, id: tuteurId, nom: tuteur.nom?.trim() || '—' })
+        if (!(await db.eleve_tuteur.get([complet.id, tuteurId]))) {
+          await db.eleve_tuteur.where('eleve_id').equals(complet.id).modify({ tuteur_principal: false })
+          await db.eleve_tuteur.add({ eleve_id: complet.id, tuteur_id: tuteurId, tuteur_principal: true })
+        }
+        await remplacerInscriptions(complet.id, campId, groupeIds)
+      })
+      return complet
+    },
+
+    async importerEleves(campId, lignes, groupeIds, fichier, p) {
+      if (!estAdminCamp(p, campId)) throw new ErreurDroits('Seul un admin du camp importe des élèves')
+      const valides = lignes.filter((l) => l.erreurs.length === 0)
+      const crees: Eleve[] = []
+      const rattaches: Eleve[] = []
+      await db.transaction('rw', [db.eleve, db.tuteur, db.eleve_tuteur, db.inscription, db.ecole, db.lot_import, db.groupe, db.atelier], async () => {
+        const codes = new Set((await db.eleve.toArray()).map((e) => e.code_acces))
+        const ecoles = new Map((await db.ecole.toArray()).map((e) => [normaliser(e.nom), e.id]))
+        for (const l of valides) {
+          let eleve = l.eleve_existant_id ? await db.eleve.get(l.eleve_existant_id) : undefined
+          if (eleve) {
+            rattaches.push(eleve)
+          } else {
+            // école inconnue : créée une seule fois même si plusieurs lignes la citent
+            let ecole_id = l.ecole_id
+            if (!ecole_id && l.ecole_nom) {
+              ecole_id = ecoles.get(normaliser(l.ecole_nom))
+              if (!ecole_id) {
+                ecole_id = nouvelId()
+                await db.ecole.add({ id: ecole_id, nom: l.ecole_nom })
+                ecoles.set(normaliser(l.ecole_nom), ecole_id)
+              }
+            }
+            const code = genererCode((c) => codes.has(c))
+            codes.add(code)
+            eleve = {
+              id: nouvelId(), code_acces: code, nom: l.nom, prenom: l.prenom, date_naissance: l.date_naissance!,
+              sexe: l.sexe!, classe: l.classe!, ecole_id, langue_id: l.langue_id, langue_autre: l.langue_autre, langue_interface: 'fr',
+            }
+            await db.eleve.add(eleve)
+            const tuteurId = nouvelId()
+            await db.tuteur.add({ id: tuteurId, ...l.tuteur, nom: l.tuteur.nom || '—' })
+            await db.eleve_tuteur.add({ eleve_id: eleve.id, tuteur_id: tuteurId, tuteur_principal: true })
+            crees.push(eleve)
+          }
+          for (const gid of groupeIds) {
+            if (!(await db.inscription.where('[eleve_id+groupe_id]').equals([eleve.id, gid]).count())) {
+              await db.inscription.add({ id: nouvelId(), eleve_id: eleve.id, groupe_id: gid, inscrit_le: maintenant() })
+            }
+          }
+        }
+        await db.lot_import.add({
+          id: nouvelId(), utilisateur_id: p.id, camp_id: campId, fichier, importe_le: maintenant(),
+          lignes_ok: valides.length, lignes_erreur: lignes.length - valides.length,
+        })
+      })
+      return { crees, rattaches }
+    },
+
+    async ecoles() {
+      return (await db.ecole.toArray()).sort((a, b) => a.nom.localeCompare(b.nom))
+    },
+    async langues() {
+      return (await db.langue.toArray()).sort((a, b) => a.ordre - b.ordre)
+    },
+    async identitesEleves() {
+      return (await db.eleve.toArray()).map(({ id, nom, prenom, date_naissance }) => ({ id, nom, prenom, date_naissance }))
     },
 
     // ---------------------------------------------------------------- Référentiels

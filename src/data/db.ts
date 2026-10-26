@@ -5,7 +5,7 @@
 import Dexie, { type Table } from 'dexie'
 import type {
   Atelier, AttributionRole, Camp, Choix, Competence, Eleve, Fiche, FicheQuestion, Groupe, GroupeFormateur,
-  Inscription, Question, Reponse, SessionEvaluation, Technologie, Tentative, Utilisateur,
+  Ecole, EleveTuteur, Inscription, LangueParlee, LotImport, Question, Reponse, SessionEvaluation, Technologie, Tentative, Tuteur, Utilisateur,
 } from '../types'
 
 export class BaseCamp extends Dexie {
@@ -26,6 +26,11 @@ export class BaseCamp extends Dexie {
   utilisateur!: Table<Utilisateur, string>
   attribution_role!: Table<AttributionRole, string>
   groupe_formateur!: Table<GroupeFormateur, string>
+  ecole!: Table<Ecole, string>
+  langue!: Table<LangueParlee, string>
+  tuteur!: Table<Tuteur, string>
+  eleve_tuteur!: Table<EleveTuteur, [string, string]>
+  lot_import!: Table<LotImport, string>
 
   constructor(nom = 'camp-caysti') {
     super(nom)
@@ -52,6 +57,14 @@ export class BaseCamp extends Dexie {
       attribution_role: 'id, utilisateur_id, camp_id',
       groupe_formateur: 'id, groupe_id, utilisateur_id',
       fiche: 'id, type, technologie_id, auteur_id, statut_validation',
+    })
+    // v3 : écoles, langues, tuteurs (contact parent) et historique des imports Excel
+    this.version(3).stores({
+      ecole: 'id, nom',
+      langue: 'id',
+      tuteur: 'id',
+      eleve_tuteur: '[eleve_id+tuteur_id], eleve_id, tuteur_id',
+      lot_import: 'id, camp_id',
     })
   }
 }

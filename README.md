@@ -9,8 +9,8 @@ La spécification du modèle de données est dans le document « Application Cam
 | Lot | Contenu | État |
 | --- | --- | --- |
 | 1 | Schéma de base (PostgreSQL / Supabase) | Fait |
-| 1 | Parcours élève : connexion par code, tests chronométrés par question, barème, top 10, FR/EN, hors ligne | Fait (stockage local) |
-| 2 | Espace admin et formateur : camps, groupes, élèves, import Excel, création et validation des fiches | À faire |
+| 1 | Parcours élève : connexion par code, ateliers du jour, tests chronométrés, barème, top 10, progression pré/post, FR/EN, hors ligne | Fait (stockage local) |
+| 2 | Espace formateur et admin : pilotage des ateliers, résultats en direct, éditeur et validation des fiches, gestion du camp, import Excel | Fait (stockage local) |
 | 3 | Mode piloté (type Kahoot) | À faire |
 | 4 | Boussole RIASEC intégrée | À faire |
 | 5 | Correction IA des QRO, fiche finale PDF, envoi email / WhatsApp | À faire |
@@ -27,7 +27,10 @@ cp .env.example .env   # VITE_DATA_BACKEND=local par défaut
 npm run dev            # http://localhost:5173
 ```
 
-En mode `local`, l'application crée des données de démonstration dans le navigateur. Codes élèves pour essayer : `AMA234`, `YAW567`, `KEM789`.
+En mode `local`, l'application crée des données de démonstration dans le navigateur.
+
+- Espace élève : codes `AMA234`, `YAW567`, `KEM789`.
+- Espace formateur (lien en bas de l'écran de connexion) : comptes de démo Arielle Kitio (super-admin), Edem Amouzou (admin du camp), Komla Agbeko (formateur robotique), Akossiwa Dzifa (formatrice 3D).
 
 ```bash
 npm test           # tests unitaires et parcours élève
@@ -46,7 +49,13 @@ src/data/              Accès aux données
   seed.ts              Données de démonstration
 src/lib/               Règles métier pures : barème (scoring.ts), classement (ranking.ts)
 src/i18n/              Textes FR / EN
+src/data/staffRepository.ts       Contrat de l'espace formateur
+src/data/localStaffRepository.ts  Implémentation navigateur
+src/lib/droits.ts      Qui peut faire quoi (formateur, admin de camp, super-admin)
+src/lib/importEleves.ts  Lecture tolérante des fichiers Excel d'inscription
+src/lib/validationFiche.ts  Contrôles d'une fiche avant enregistrement et soumission
 src/pages/eleve/       Écrans élève
+src/staff/             Espace formateur (chargé à la demande)
 src/components/        En-tête, chronomètre
 ```
 
@@ -61,6 +70,10 @@ Les écrans ne parlent qu'au contrat `Repository`. Brancher Supabase consistera 
 - **Classement** : top 10, « Prénom + initiale », score puis temps total. La vitesse ne rapporte aucun point.
 - **Une tentative par session** ; une tentative interrompue reprend à la première question sans réponse.
 - **Tablettes partagées** : l'élève connecté est oublié à la fermeture de l'onglet.
+- **Atelier verrouillé** tant que le formateur ne l'a pas démarré (contrôlé aussi en base, migration 0003) ; activité grisée tant qu'elle n'est pas ouverte.
+- **Fiches** : brouillon privé ou partagé → soumise → validée (officielle) ou renvoyée avec remarque. Une fiche officielle ou déjà passée par des élèves ne se modifie plus : on la duplique.
+- **Programmation** : un formateur programme les fiches officielles, ou ses propres brouillons pour les essayer avec son groupe.
+- **Import Excel** : aperçu ligne par ligne avant tout enregistrement ; élèves déjà connus rattachés (même code), doublons du fichier signalés, écoles inconnues créées une seule fois.
 
 ## Mettre le projet sur GitHub
 

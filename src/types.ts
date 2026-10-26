@@ -94,6 +94,49 @@ export interface Eleve {
   langue_interface: Langue
 }
 
+export interface Ecole {
+  id: string
+  ville_id?: string
+  nom: string
+  type?: 'public' | 'prive'
+}
+
+export interface LangueParlee {
+  id: string
+  libelle_fr: string
+  libelle_en: string
+  est_autre: boolean
+  ordre: number
+}
+
+export interface Tuteur {
+  id: string
+  nom: string
+  prenom?: string
+  telephone?: string
+  whatsapp?: string
+  email?: string
+  lien?: string
+  consentement_le?: string
+  consentement_mode?: string
+}
+
+export interface EleveTuteur {
+  eleve_id: string
+  tuteur_id: string
+  tuteur_principal: boolean
+}
+
+export interface LotImport {
+  id: string
+  utilisateur_id: string
+  camp_id?: string
+  fichier: string
+  importe_le: string
+  lignes_ok: number
+  lignes_erreur: number
+}
+
 export interface Inscription {
   id: string
   eleve_id: string
@@ -276,4 +319,19 @@ export interface LigneResultat {
   tentative?: Tentative
   /** Réponses écrites encore à corriger. */
   en_attente: number
+}
+
+// ---------------------------------------------------------------- Gestion du camp
+
+export interface EleveDuCamp {
+  eleve: Eleve
+  ecole?: Ecole
+  tuteur?: Tuteur
+  groupes: { groupe: Groupe; atelier: Atelier }[]
+}
+
+export interface AtelierDuCamp {
+  atelier: Atelier
+  technologie: Technologie
+  groupes: { groupe: Groupe; formateurs: { utilisateur: Utilisateur; role: 'principal' | 'secondaire' }[]; nb_eleves: number }[]
 }
