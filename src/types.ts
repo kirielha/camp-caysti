@@ -181,6 +181,20 @@ export interface SessionPourEleve {
   tentative?: Tentative
 }
 
+/** Un atelier de l'élève (via son groupe), avec ses activités ouvertes dans l'ordre du déroulé. */
+export interface AtelierPourEleve {
+  atelier: Atelier
+  groupe: Groupe
+  technologie: Technologie
+  activites: SessionPourEleve[]
+}
+
+/** Comparaison prétest / post-test d'un même atelier pour un élève. */
+export interface Progression {
+  pretest?: { score: number; score_max: number }
+  posttest?: { score: number; score_max: number }
+}
+
 export interface LigneClassement {
   rang: number
   eleve_id: string

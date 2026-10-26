@@ -110,19 +110,41 @@ button, input, textarea { font: inherit; color: inherit; }
 .demo p { margin: 0 0 8px; }
 .demo-codes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
 
-/* ---------- Activités ---------- */
-.activites { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-.activite {
-  --techno: var(--bleu);
-  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  background: var(--blanc); border-radius: var(--rayon); padding: 18px 20px;
-  border-left: 8px solid var(--techno);
+/* ---------- Ateliers et activités ---------- */
+.ateliers { display: grid; gap: 28px; margin-top: 20px; }
+.atelier { --techno: var(--bleu); background: var(--blanc); border-radius: var(--rayon); overflow: hidden; }
+.atelier-entete { padding: 18px 20px 14px; border-top: 10px solid var(--techno); }
+.atelier-horaire { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; font-size: 0.9rem; color: var(--encre-douce); }
+.atelier-heure { font-weight: 600; color: var(--encre); }
+.atelier-heure::first-letter { text-transform: uppercase; }
+.atelier-titre { font-family: var(--titre); font-weight: 800; font-size: 1.6rem; line-height: 1.15; margin: 4px 0 0; }
+.atelier-techno { margin: 0; font-weight: 600; color: var(--techno); filter: brightness(0.85); }
+.atelier-vide { padding: 0 20px 18px; }
+
+.progression {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 20px 12px;
+  padding: 10px 14px; border-radius: var(--rayon-petit); background: var(--ciel); font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
 }
-.activite h3 { font-family: var(--titre); font-weight: 700; font-size: 1.3rem; line-height: 1.2; margin: 4px 0 2px; }
-.activite-texte { flex: 1 1 260px; }
+.progression-fleche { color: var(--encre-douce); font-weight: 600; }
+.progression strong { margin-left: auto; }
+.progression-hausse { color: var(--feuille); }
+
+.activites { list-style: none; padding: 0; margin: 0; }
+.activite {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap;
+  padding: 14px 20px; border-top: 2px solid var(--ciel);
+}
+.activite h3 { font-family: var(--titre); font-weight: 700; font-size: 1.2rem; line-height: 1.2; margin: 4px 0 0; }
+.activite .aide { margin: 0; }
+.activite-texte { flex: 1 1 220px; min-width: 0; }
 .activite-meta { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 0.85rem; color: var(--encre-douce); }
-.etiquette-type { background: var(--encre); color: var(--blanc); border-radius: 6px; padding: 2px 9px; font-weight: 600; }
+.etiquette-type { background: var(--encre); color: var(--blanc); border-radius: 6px; padding: 2px 9px; font-weight: 600; font-size: 0.82rem; }
+.etiquette-quiz { background: var(--bleu); }
+.etiquette-satisfaction { background: var(--ciel-fonce); color: var(--encre); }
 .activite-actions { display: flex; flex-direction: column; align-items: flex-end; }
+.activite-score { font-family: var(--titre); font-weight: 800; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.activite-faite h3 { color: var(--encre-douce); }
 .etiquette-fait { color: var(--feuille); font-weight: 600; }
 .etiquette-fait::before { content: '✓ '; }
 
@@ -181,7 +203,9 @@ button, input, textarea { font: inherit; color: inherit; }
 .temps-ecoule { margin-top: 28px; font-family: var(--titre); font-weight: 800; font-size: 1.6rem; color: var(--corail); text-align: center; }
 
 /* ---------- Résultat ---------- */
-.resultat { text-align: center; padding-top: 3vh; }
+.resultat { text-align: center; padding-top: 2vh; }
+.resultat-contexte { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; color: var(--encre-douce); font-weight: 500; }
+.resultat-progression { font-weight: 600; font-size: 1.1rem; margin: 0 0 12px; }
 .resultat-bravo { font-family: var(--titre); font-weight: 700; font-size: 1.4rem; margin: 0; }
 .score { display: flex; flex-direction: column; align-items: center; margin: 8px 0 16px; }
 .score-valeur {

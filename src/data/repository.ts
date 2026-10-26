@@ -3,7 +3,7 @@
 // implémentation Supabase sans toucher aux écrans.
 
 import type {
-  Eleve, Fiche, Langue, LigneClassement, QuestionAvecChoix, Reponse,
+  AtelierPourEleve, Eleve, Fiche, Langue, LigneClassement, Progression, QuestionAvecChoix, Reponse,
   SessionPourEleve, Tentative,
 } from '../types'
 
@@ -24,8 +24,17 @@ export interface Repository {
   /** Met à jour la langue d'interface préférée de l'élève. */
   changerLangueEleve(eleveId: string, langue: Langue): Promise<void>
 
-  /** Sessions ouvertes des groupes où l'élève est inscrit, avec sa tentative éventuelle. */
+  /**
+   * Ateliers de l'élève pour le camp en cours, triés par date et heure de son groupe,
+   * chacun avec ses activités ouvertes (prétest, quiz, post-test, avis) et sa tentative éventuelle.
+   */
+  ateliersPourEleve(eleveId: string): Promise<AtelierPourEleve[]>
+
+  /** Toutes les activités ouvertes de l'élève, à plat (dans l'ordre des ateliers). */
   sessionsPourEleve(eleveId: string): Promise<SessionPourEleve[]>
+
+  /** Scores prétest et post-test de l'élève pour l'atelier de cette session. */
+  progression(sessionId: string, eleveId: string): Promise<Progression>
 
   /** Fiche et questions d'une session, dans l'ordre, avec leurs choix. */
   chargerSession(sessionId: string): Promise<{ detail: SessionPourEleve; questions: QuestionAvecChoix[] }>

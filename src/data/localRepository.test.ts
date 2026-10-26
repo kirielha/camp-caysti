@@ -21,10 +21,39 @@ describe('parcours élève (stockage local)', () => {
     expect(await repo.trouverEleveParCode('ZZZZZZ')).toBeUndefined()
   })
 
-  it('liste les sessions ouvertes, prétest en premier', async () => {
+  it('regroupe les activités par atelier, dans l’ordre de la journée', async () => {
     const e = (await repo.trouverEleveParCode('AMA234'))!
-    const sessions = await repo.sessionsPourEleve(e.id)
-    expect(sessions.map((s) => s.fiche.type)).toEqual(['pretest', 'quiz', 'satisfaction'])
+    const ateliers = await repo.ateliersPourEleve(e.id)
+    expect(ateliers.map((a) => [a.technologie.nom_fr, a.groupe.heure_debut])).toEqual([['Robotique', '09:00'], ['Impression 3D', '14:00']])
+    for (const a of ateliers) {
+      expect(a.activites.map((s) => s.fiche.type)).toEqual(['pretest', 'quiz', 'posttest', 'satisfaction'])
+    }
+    // la même fiche d'avis sert aux deux ateliers, dans deux sessions distinctes
+    const avis = ateliers.map((a) => a.activites[3])
+    expect(avis[0].fiche.id).toBe(avis[1].fiche.id)
+    expect(avis[0].session.id).not.toBe(avis[1].session.id)
+  })
+
+  it('compare prétest et post-test du même atelier', async () => {
+    const e = (await repo.trouverEleveParCode('KEM789'))!
+    const [robot, impression] = await repo.ateliersPourEleve(e.id)
+    const passer = async (s: (typeof robot.activites)[number], bonnes: number) => {
+      const { questions } = await repo.chargerSession(s.session.id)
+      const { tentative } = await repo.demarrerTentative(s.session.id, e.id, 'fr')
+      for (const [i, q] of questions.entries()) {
+        const coches = i < bonnes ? q.choix.filter((c) => c.est_correct).map((c) => c.id) : []
+        await repo.enregistrerReponse(tentative.id, q.id, { choix_coches: coches, temps_ms: 1000 })
+      }
+      await repo.soumettreTentative(tentative.id)
+    }
+    await passer(robot.activites[0], 1) // prétest : 1 point
+    expect(await repo.progression(robot.activites[0].session.id, e.id)).toEqual({ pretest: { score: 1, score_max: 8 } })
+    await passer(robot.activites[2], 4) // post-test : 1 + 3 + 1 + 1 = 6 points
+    expect(await repo.progression(robot.activites[2].session.id, e.id)).toEqual({
+      pretest: { score: 1, score_max: 8 }, posttest: { score: 6, score_max: 8 },
+    })
+    // l'autre atelier n'est pas concerné
+    expect(await repo.progression(impression.activites[0].session.id, e.id)).toEqual({})
   })
 
   it('passe un prétest complet : notation, attente de la QRO IA, classement', async () => {

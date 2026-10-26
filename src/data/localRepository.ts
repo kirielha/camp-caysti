@@ -1,11 +1,14 @@
 import { classer } from '../lib/ranking'
 import { noterReponse, totaliser } from '../lib/scoring'
 import { nouvelId } from '../lib/ids'
-import type { Eleve, Langue, QuestionAvecChoix, Reponse, SessionPourEleve, Tentative } from '../types'
+import type { AtelierPourEleve, Eleve, Langue, Progression, QuestionAvecChoix, Reponse, SessionPourEleve, Tentative, TypeFiche } from '../types'
 import type { BaseCamp } from './db'
 import { ErreurMetier, type Repository } from './repository'
 
 const maintenant = () => new Date().toISOString()
+/** Ordre des activités dans un atelier : prétest, quiz, post-test, avis. */
+const ORDRE_DEROULE: Record<TypeFiche, number> = { pretest: 0, quiz: 1, posttest: 2, satisfaction: 3 }
+
 export const normaliserCode = (code: string) => code.replace(/\s+/g, '').toUpperCase()
 
 export function creerRepositoryLocal(db: BaseCamp): Repository {
@@ -31,7 +34,7 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
     )
   }
 
-  return {
+  const repo: Repository = {
     async trouverEleveParCode(code) {
       return db.eleve.where('code_acces').equals(normaliserCode(code)).first()
     },
@@ -40,21 +43,49 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
       await db.eleve.update(eleveId, { langue_interface: langue })
     },
 
-    async sessionsPourEleve(eleveId) {
+    async ateliersPourEleve(eleveId) {
       const inscriptions = await db.inscription.where('eleve_id').equals(eleveId).toArray()
-      const groupes = inscriptions.map((i) => i.groupe_id)
-      const sessions = await db.session_evaluation.where('groupe_id').anyOf(groupes).toArray()
-      const ouvertes = sessions.filter((s) => s.statut === 'ouverte')
-      const details = await Promise.all(
-        ouvertes.map(async (s) => {
-          const d = await detailSession(s.id)
-          d.tentative = await db.tentative.where('[session_id+eleve_id]').equals([s.id, eleveId]).first()
-          return d
+      const resultats = await Promise.all(
+        inscriptions.map(async (insc) => {
+          const groupe = await db.groupe.get(insc.groupe_id)
+          const atelier = groupe && (await db.atelier.get(groupe.atelier_id))
+          const technologie = atelier && (await db.technologie.get(atelier.technologie_id))
+          if (!groupe || !atelier || !technologie) return undefined
+          const sessions = (await db.session_evaluation.where('groupe_id').equals(groupe.id).toArray())
+            .filter((s) => s.statut === 'ouverte')
+          const activites = await Promise.all(
+            sessions.map(async (s) => {
+              const d = await detailSession(s.id)
+              d.tentative = await db.tentative.where('[session_id+eleve_id]').equals([s.id, eleveId]).first()
+              return d
+            }),
+          )
+          activites.sort((a, b) => ORDRE_DEROULE[a.fiche.type] - ORDRE_DEROULE[b.fiche.type])
+          return { atelier, groupe, technologie, activites }
         }),
       )
-      // prétests d'abord, puis quiz, post-tests, satisfaction
-      const ordre = { pretest: 0, quiz: 1, posttest: 2, satisfaction: 3 }
-      return details.sort((a, b) => ordre[a.fiche.type] - ordre[b.fiche.type])
+      return resultats
+        .filter((r): r is AtelierPourEleve => !!r)
+        .sort((a, b) => `${a.groupe.date} ${a.groupe.heure_debut}`.localeCompare(`${b.groupe.date} ${b.groupe.heure_debut}`))
+    },
+
+    async sessionsPourEleve(eleveId) {
+      return (await repo.ateliersPourEleve(eleveId)).flatMap((a) => a.activites)
+    },
+
+    async progression(sessionId, eleveId) {
+      const session = await db.session_evaluation.get(sessionId)
+      if (!session) return {}
+      // pré et post-tests du même groupe (donc du même atelier)
+      const duGroupe = await db.session_evaluation.where('groupe_id').equals(session.groupe_id).toArray()
+      const resultat: Progression = {}
+      for (const s of duGroupe) {
+        const fiche = await db.fiche.get(s.fiche_id)
+        if (fiche?.type !== 'pretest' && fiche?.type !== 'posttest') continue
+        const t = await db.tentative.where('[session_id+eleve_id]').equals([s.id, eleveId]).first()
+        if (t && t.statut !== 'en_cours') resultat[fiche.type] = { score: t.score ?? 0, score_max: t.score_max ?? 0 }
+      }
+      return resultat
     },
 
     async chargerSession(sessionId) {
@@ -135,4 +166,5 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
       return db.fiche.get(ficheId)
     },
   }
+  return repo
 }
