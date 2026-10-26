@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" role="img" aria-label="LED">
+  <rect width="200" height="220" rx="16" fill="#ffffff"/>
+  <path d="M70 120 V70 a30 30 0 0 1 60 0 V120 Z" fill="#ee5a5d" opacity="0.85"/>
+  <path d="M84 72 a16 16 0 0 1 18 -14" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <rect x="62" y="118" width="76" height="12" rx="3" fill="#c8474a"/>
+  <line x1="86" y1="130" x2="86" y2="200" stroke="#8a8f98" stroke-width="6" stroke-linecap="round"/>
+  <path d="M114 130 V170 L122 178 V200" stroke="#8a8f98" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
