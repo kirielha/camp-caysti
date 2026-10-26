@@ -113,7 +113,9 @@ button, input, textarea { font: inherit; color: inherit; }
 /* ---------- Ateliers et activités ---------- */
 .ateliers { display: grid; gap: 28px; margin-top: 20px; }
 .atelier { --techno: var(--bleu); background: var(--blanc); border-radius: var(--rayon); overflow: hidden; }
-.atelier-entete { padding: 18px 20px 14px; border-top: 10px solid var(--techno); }
+.atelier-entete { position: relative; padding: 18px 20px 14px; padding-right: 128px; min-height: 120px; border-top: 10px solid var(--techno); }
+.atelier-image { position: absolute; top: 10px; right: 12px; width: 110px; height: auto; }
+@media (max-width: 420px) { .atelier-entete { padding-right: 96px; } .atelier-image { width: 80px; } }
 .atelier-horaire { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; font-size: 0.9rem; color: var(--encre-douce); }
 .atelier-heure { font-weight: 600; color: var(--encre); }
 .atelier-heure::first-letter { text-transform: uppercase; }
@@ -163,7 +165,11 @@ button, input, textarea { font: inherit; color: inherit; }
 
 .question-numero { margin: 0 0 6px; color: var(--encre-douce); font-weight: 500; }
 .enonce { font-size: clamp(1.6rem, 5vw, 2.1rem); margin-bottom: 14px; max-width: 30ch; }
-.question-image { width: min(240px, 60%); margin: 4px 0 16px; border-radius: var(--rayon); background: var(--blanc); }
+.question-illustration {
+  margin: 4px 0 18px; padding: 12px; background: var(--blanc); border-radius: var(--rayon);
+  display: flex; justify-content: center;
+}
+.question-illustration img { width: min(260px, 70%); height: auto; }
 
 .choix { display: grid; gap: 12px; margin-top: 12px; }
 @media (min-width: 640px) { .choix { grid-template-columns: 1fr 1fr; } }
@@ -180,7 +186,15 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 .tuile-lettre-carree { border-radius: 9px; }
 .tuile-texte { font-weight: 500; font-size: 1.05rem; line-height: 1.3; }
-.tuile-image { width: 56px; margin-left: auto; }
+.tuile-legende { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.tuile-image { width: 100%; max-width: 160px; height: auto; margin: 0 auto; }
+/* Réponses en images : grille de cartes, image en haut, lettre et texte en dessous */
+.choix-illustres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .choix-illustres { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+.choix-illustres .tuile { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
+.choix-illustres .tuile-legende { gap: 10px; }
+.choix-illustres .tuile-lettre { width: 32px; height: 32px; font-size: 1rem; }
+.choix-illustres .tuile-texte { font-size: 0.98rem; }
 .tuile-active { border-color: var(--bleu); background: #f2f6ff; }
 .tuile-active .tuile-lettre { background: var(--bleu); color: var(--blanc); }
 .tuile:disabled { cursor: default; }

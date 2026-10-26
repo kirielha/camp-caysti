@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Bouton poussoir">
+<rect x="56" y="70" width="88" height="44" rx="6" fill="#142240" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="100" cy="74" r="20" fill="#e5484d" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="72" y1="114" x2="72" y2="136" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><line x1="128" y1="114" x2="128" y2="136" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M100 22 v18 M86 30 l14 12 l14 -12" fill="none" stroke="#2b59e0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>

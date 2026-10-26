@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Caméra">
+<rect x="40" y="56" width="120" height="70" rx="12" fill="#142240" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="64" y="44" width="36" height="16" rx="4" fill="#142240" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="100" cy="91" r="24" fill="#dfe5ee" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="100" cy="91" r="12" fill="#2b59e0" stroke="#142240" stroke-width="3"/>
+<circle cx="140" cy="70" r="5" fill="#e5484d"/></svg>

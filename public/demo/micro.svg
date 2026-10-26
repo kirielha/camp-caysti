@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Microphone">
+<rect x="78" y="28" width="44" height="70" rx="22" fill="#b9c3d4" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="86" y1="46" x2="114" y2="46" stroke="#142240" stroke-width="2" opacity=".5"/><line x1="86" y1="56" x2="114" y2="56" stroke="#142240" stroke-width="2" opacity=".5"/><line x1="86" y1="66" x2="114" y2="66" stroke="#142240" stroke-width="2" opacity=".5"/>
+<path d="M64 80 a36 36 0 0 0 72 0" fill="none" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="100" y1="116" x2="100" y2="136" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><line x1="80" y1="138" x2="120" y2="138" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></svg>

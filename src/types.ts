@@ -36,6 +36,7 @@ export interface Atelier {
   technologie_id: string
   titre_fr: string
   titre_en?: string
+  image?: string
 }
 
 export interface Groupe {

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Moteur">
+<rect x="40" y="56" width="90" height="56" rx="10" fill="#ffc531" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="130" y="66" width="22" height="36" rx="4" fill="#dfe5ee" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="152" y1="84" x2="172" y2="84" stroke="#142240" stroke-width="6" stroke-linecap="round"/>
+<line x1="60" y1="56" x2="60" y2="112" stroke="#142240" stroke-width="3" opacity=".35"/><line x1="80" y1="56" x2="80" y2="112" stroke="#142240" stroke-width="3" opacity=".35"/>
+<path d="M164 64 a26 26 0 0 1 0 40" fill="none" stroke="#2b59e0" stroke-width="4" stroke-linecap="round"/>
+<path d="M160 104 l4 6 l6 -4" fill="none" stroke="#2b59e0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="56" y1="112" x2="56" y2="132" stroke="#e5484d" stroke-width="4" stroke-linecap="round"/><line x1="72" y1="112" x2="72" y2="132" stroke="#142240" stroke-width="4" stroke-linecap="round"/></svg>

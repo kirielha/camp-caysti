@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Logiciel trancheur">
+<rect x="26" y="26" width="148" height="100" rx="10" fill="#142240" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="36" y="36" width="128" height="80" rx="4" fill="#eaf2fb"/>
+<path d="M76 102 L100 56 L124 102 Z" fill="#17a07a" stroke="#142240" stroke-width="3"/>
+<line x1="70" y1="66" x2="130" y2="66" stroke="#142240" stroke-width="2" stroke-dasharray="4 3"/><line x1="70" y1="76" x2="130" y2="76" stroke="#142240" stroke-width="2" stroke-dasharray="4 3"/><line x1="70" y1="86" x2="130" y2="86" stroke="#142240" stroke-width="2" stroke-dasharray="4 3"/><line x1="70" y1="96" x2="130" y2="96" stroke="#142240" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="100" y1="126" x2="100" y2="140" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><line x1="76" y1="142" x2="124" y2="142" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></svg>

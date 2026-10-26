@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Imprimante 3D">
+<rect x="36" y="20" width="128" height="124" rx="8" fill="none" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<line x1="36" y1="46" x2="164" y2="46" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="84" y="38" width="32" height="20" rx="4" fill="#ffc531" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M94 58 L100 70 L106 58 Z" fill="#142240"/>
+<rect x="52" y="122" width="96" height="10" rx="3" fill="#b9c3d4" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="82" y="110" width="36" height="12" fill="#17a07a"/><rect x="86" y="98" width="28" height="12" fill="#17a07a" opacity=".85"/><rect x="90" y="86" width="20" height="12" fill="#17a07a" opacity=".7"/>
+<line x1="100" y1="70" x2="100" y2="84" stroke="#17a07a" stroke-width="3" stroke-dasharray="3 3"/></svg>

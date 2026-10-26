@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Robot">
+<line x1="100" y1="22" x2="100" y2="38" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="100" cy="18" r="7" fill="#ffc531" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="56" y="38" width="88" height="56" rx="16" fill="#2b59e0" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="68" y="50" width="64" height="30" rx="10" fill="#eaf2fb" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="86" cy="65" r="6" fill="#142240"/><circle cx="114" cy="65" r="6" fill="#142240"/>
+<rect x="66" y="98" width="68" height="36" rx="10" fill="#dfe5ee" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="88" y="106" width="24" height="10" rx="4" fill="#e5484d"/>
+<circle cx="66" cy="138" r="12" fill="#142240"/><circle cx="134" cy="138" r="12" fill="#142240"/>
+<circle cx="66" cy="138" r="4" fill="#b9c3d4"/><circle cx="134" cy="138" r="4" fill="#b9c3d4"/>
+<line x1="56" y1="70" x2="40" y2="84" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><line x1="144" y1="70" x2="160" y2="84" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></svg>

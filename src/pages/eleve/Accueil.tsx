@@ -41,6 +41,7 @@ export function Accueil() {
         {ateliers?.map((a) => (
           <article key={a.groupe.id} className="atelier" style={{ ['--techno' as string]: a.technologie.couleur }}>
             <header className="atelier-entete">
+              {a.atelier.image && <img className="atelier-image" src={a.atelier.image} alt="" />}
               <p className="atelier-horaire">
                 <span className="atelier-heure">{t.jour(a.groupe.date)}, {a.groupe.heure_debut}–{a.groupe.heure_fin}</span>
                 <span>{[a.groupe.salle, a.groupe.nom].filter(Boolean).join(', ')}</span>

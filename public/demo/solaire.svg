@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Panneau solaire">
+<circle cx="160" cy="34" r="14" fill="#ffc531" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M40 112 L62 56 H146 L124 112 Z" fill="#2b59e0" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M54 84 H136 M51 98 H130 M90 56 L76 112 M118 56 L104 112" stroke="#eaf2fb" stroke-width="3"/>
+<line x1="94" y1="112" x2="94" y2="138" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><line x1="72" y1="140" x2="116" y2="140" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/></svg>

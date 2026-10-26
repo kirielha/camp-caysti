@@ -9,6 +9,9 @@ import type {
 import type { BaseCamp } from './db'
 
 /** UUID déterministe pour la démo : u(12) → 00000000-0000-4000-8000-000000000012 */
+/** Chemin d'une illustration de démo (public/demo). */
+const img = (nom: string) => `demo/${nom}.svg`
+
 const u = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 
 const ID = {
@@ -26,7 +29,7 @@ const ID = {
 export const CODES_DEMO = ['AMA234', 'YAW567', 'KEM789']
 
 /** À incrémenter à chaque changement des données de démo : les navigateurs les rechargent alors. */
-const VERSION_DEMO = '2'
+const VERSION_DEMO = '3'
 const CLE_VERSION = 'camp-caysti:version-demo'
 
 export async function seedSiVide(db: BaseCamp) {
@@ -44,7 +47,7 @@ export async function reinitialiserDemo(db: BaseCamp) {
   try { localStorage.setItem(CLE_VERSION, VERSION_DEMO) } catch { /* stockage indisponible */ }
 }
 
-type Option = [fr: string, en: string, correct: boolean]
+type Option = [fr: string, en: string, correct: boolean, image?: string]
 type BaseQuestion = Omit<Question, 'id' | 'auteur_id' | 'mode_bareme'> & { mode_bareme?: Question['mode_bareme'] }
 
 async function seed(db: BaseCamp) {
@@ -59,8 +62,8 @@ async function seed(db: BaseCamp) {
   const q = (base: BaseQuestion, options: Option[] = [], jumelle?: string) => {
     const id = u(nq++)
     questions.push({ mode_bareme: 'tout_ou_rien', ...base, id, auteur_id: auteur, question_jumelle_id: jumelle })
-    options.forEach(([fr, en, ok], i) =>
-      choix.push({ id: u(nc++), question_id: id, texte_fr: fr, texte_en: en, est_correct: ok, ordre: i }),
+    options.forEach(([fr, en, ok, image], i) =>
+      choix.push({ id: u(nc++), question_id: id, texte_fr: fr, texte_en: en, est_correct: ok, ordre: i, image: image && img(image) }),
     )
     return id
   }
@@ -68,63 +71,63 @@ async function seed(db: BaseCamp) {
 
   // ======================= Robotique =======================
   const preRobot = [
-    q({ type: 'qcm_unique', enonce_fr: 'À quoi sert un capteur sur un robot ?', enonce_en: 'What does a sensor do on a robot?', duree_secondes: 30, points: 1, competence_id: ID.compCapteur }, [
+    q({ type: 'qcm_unique', image: img('ultrason'), enonce_fr: 'À quoi sert un capteur sur un robot ?', enonce_en: 'What does a sensor do on a robot?', duree_secondes: 30, points: 1, competence_id: ID.compCapteur }, [
       ['À mesurer quelque chose autour du robot', 'It measures something around the robot', true],
       ['À faire bouger les roues', 'It makes the wheels move', false],
       ['À stocker l’énergie', 'It stores energy', false],
       ['À décorer le robot', 'It decorates the robot', false],
     ]),
     q({ type: 'qcm_multiple', mode_bareme: 'proportionnel', enonce_fr: 'Coche tous les capteurs.', enonce_en: 'Tick all the sensors.', duree_secondes: 40, points: 3, competence_id: ID.compCapteur }, [
-      ['Capteur à ultrasons', 'Ultrasonic sensor', true],
-      ['Capteur infrarouge', 'Infrared sensor', true],
-      ['Capteur de lumière', 'Light sensor', true],
-      ['Moteur', 'Motor', false],
+      ['Capteur à ultrasons', 'Ultrasonic sensor', true, 'ultrason'],
+      ['Capteur infrarouge', 'Infrared sensor', true, 'infrarouge'],
+      ['Capteur de lumière', 'Light sensor', true, 'lumiere'],
+      ['Moteur', 'Motor', false, 'moteur'],
     ]),
-    q({ type: 'qcm_unique', image: 'demo/led.svg', enonce_fr: 'Quel est ce composant ?', enonce_en: 'What is this component?', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
+    q({ type: 'qcm_unique', image: img('led'), enonce_fr: 'Quel est ce composant ?', enonce_en: 'What is this component?', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
       ['Une LED', 'An LED', true],
       ['Une résistance', 'A resistor', false],
       ['Un moteur', 'A motor', false],
-      ['Une pile', 'A battery', false],
+      ['Une pile', 'A battery', false, 'pile'],
     ]),
     q({ type: 'qcm_unique', enonce_fr: 'Pour avancer, un robot a surtout besoin…', enonce_en: 'To move forward, a robot mostly needs…', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
-      ['d’un moteur', 'a motor', true],
-      ['d’un écran', 'a screen', false],
-      ['d’un haut-parleur', 'a speaker', false],
+      ['d’un moteur', 'a motor', true, 'moteur'],
+      ['d’un écran', 'a screen', false, 'ecran'],
+      ['d’un haut-parleur', 'a speaker', false, 'hautparleur'],
     ]),
     q({
-      type: 'qro_ia', enonce_fr: 'Explique avec tes mots ce qu’est un robot.', enonce_en: 'Explain in your own words what a robot is.',
+      type: 'qro_ia', image: img('robot'), enonce_fr: 'Explique avec tes mots ce qu’est un robot.', enonce_en: 'Explain in your own words what a robot is.',
       duree_secondes: 90, points: 2, competence_id: ID.compRobot,
       reponse_attendue_fr: 'Une machine programmable qui perçoit son environnement avec des capteurs et agit avec des actionneurs.',
       reponse_attendue_en: 'A programmable machine that senses its environment with sensors and acts with actuators.',
       criteres_correction: '1 point : machine programmable ; 1 point : capteurs/perception ET actionneurs/action.',
     }),
-    q({ type: 'qro_qualitative', enonce_fr: 'Qu’aimerais-tu construire pendant cet atelier ?', enonce_en: 'What would you like to build during this workshop?', duree_secondes: 90, points: 0 }),
+    q({ type: 'qro_qualitative', image: img('robot'), enonce_fr: 'Qu’aimerais-tu construire pendant cet atelier ?', enonce_en: 'What would you like to build during this workshop?', duree_secondes: 90, points: 0 }),
   ]
   // Post-test : mêmes compétences, formulations différentes (questions jumelles)
   const postRobot = [
-    q({ type: 'qcm_unique', enonce_fr: 'Quel est le rôle d’un capteur dans un robot ?', enonce_en: 'What is the role of a sensor in a robot?', duree_secondes: 30, points: 1, competence_id: ID.compCapteur }, [
+    q({ type: 'qcm_unique', image: img('infrarouge'), enonce_fr: 'Quel est le rôle d’un capteur dans un robot ?', enonce_en: 'What is the role of a sensor in a robot?', duree_secondes: 30, points: 1, competence_id: ID.compCapteur }, [
       ['Faire tourner les moteurs', 'Turn the motors', false],
       ['Donner au robot des informations sur ce qui l’entoure', 'Give the robot information about its surroundings', true],
       ['Recharger la batterie', 'Charge the battery', false],
     ], preRobot[0]),
     q({ type: 'qcm_multiple', mode_bareme: 'proportionnel', enonce_fr: 'Lesquels permettent au robot de percevoir ?', enonce_en: 'Which ones let the robot perceive?', duree_secondes: 40, points: 3, competence_id: ID.compCapteur }, [
-      ['Une roue', 'A wheel', false],
-      ['Une caméra', 'A camera', true],
-      ['Un microphone', 'A microphone', true],
-      ['Un capteur de distance', 'A distance sensor', true],
+      ['Une roue', 'A wheel', false, 'roue'],
+      ['Une caméra', 'A camera', true, 'camera'],
+      ['Un microphone', 'A microphone', true, 'micro'],
+      ['Un capteur de distance', 'A distance sensor', true, 'ultrason'],
     ], preRobot[1]),
-    q({ type: 'qcm_unique', enonce_fr: 'Une LED qui s’allume est un exemple…', enonce_en: 'An LED lighting up is an example of…', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
+    q({ type: 'qcm_unique', image: img('led'), enonce_fr: 'Une LED qui s’allume est un exemple…', enonce_en: 'An LED lighting up is an example of…', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
       ['d’actionneur', 'an actuator', true],
       ['de capteur', 'a sensor', false],
       ['de batterie', 'a battery', false],
     ], preRobot[2]),
     q({ type: 'qcm_unique', enonce_fr: 'Quel composant fait tourner les roues d’un robot ?', enonce_en: 'Which component turns a robot’s wheels?', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
-      ['Le capteur infrarouge', 'The infrared sensor', false],
-      ['Le moteur', 'The motor', true],
-      ['La LED', 'The LED', false],
+      ['Le capteur infrarouge', 'The infrared sensor', false, 'infrarouge'],
+      ['Le moteur', 'The motor', true, 'moteur'],
+      ['La LED', 'The LED', false, 'led'],
     ], preRobot[3]),
     q({
-      type: 'qro_ia', enonce_fr: 'Un camarade te demande ce qu’est un robot. Que lui réponds-tu ?', enonce_en: 'A friend asks you what a robot is. What do you answer?',
+      type: 'qro_ia', image: img('robot'), enonce_fr: 'Un camarade te demande ce qu’est un robot. Que lui réponds-tu ?', enonce_en: 'A friend asks you what a robot is. What do you answer?',
       duree_secondes: 90, points: 2, competence_id: ID.compRobot,
       reponse_attendue_fr: 'Une machine programmable qui perçoit son environnement avec des capteurs et agit avec des actionneurs.',
       reponse_attendue_en: 'A programmable machine that senses its environment with sensors and acts with actuators.',
@@ -132,38 +135,38 @@ async function seed(db: BaseCamp) {
     }, [], preRobot[4]),
   ]
   const quizRobot = [
-    q({ type: 'qcm_unique', enonce_fr: 'Un capteur à ultrasons mesure…', enonce_en: 'An ultrasonic sensor measures…', duree_secondes: 15, points: 1, competence_id: ID.compCapteur }, [
+    q({ type: 'qcm_unique', image: img('ultrason'), enonce_fr: 'Un capteur à ultrasons mesure…', enonce_en: 'An ultrasonic sensor measures…', duree_secondes: 15, points: 1, competence_id: ID.compCapteur }, [
       ['une distance', 'a distance', true], ['une couleur', 'a colour', false], ['une température', 'a temperature', false],
     ]),
     q({ type: 'qcm_unique', enonce_fr: 'Lequel est un actionneur ?', enonce_en: 'Which one is an actuator?', duree_secondes: 15, points: 1, competence_id: ID.compActionneur }, [
-      ['Un servomoteur', 'A servo motor', true], ['Un bouton', 'A button', false], ['Un micro', 'A microphone', false],
+      ['Un servomoteur', 'A servo motor', true, 'servo'], ['Un bouton', 'A button', false, 'bouton'], ['Un micro', 'A microphone', false, 'micro'],
     ]),
     q({ type: 'qcm_multiple', enonce_fr: 'Qu’est-ce qui peut alimenter un robot ?', enonce_en: 'What can power a robot?', duree_secondes: 20, points: 2, competence_id: ID.compActionneur }, [
-      ['Une pile', 'A battery', true], ['Un panneau solaire', 'A solar panel', true], ['Un capteur', 'A sensor', false],
+      ['Une pile', 'A battery', true], ['Un panneau solaire', 'A solar panel', true, 'solaire'], ['Un capteur', 'A sensor', false, 'lumiere'],
     ]),
   ]
 
   // ===================== Impression 3D =====================
   const pre3d = [
-    q({ type: 'qcm_unique', enonce_fr: 'Que fait une imprimante 3D ?', enonce_en: 'What does a 3D printer do?', duree_secondes: 25, points: 1, competence_id: ID.compFabrication }, [
+    q({ type: 'qcm_unique', image: img('imprimante3d'), enonce_fr: 'Que fait une imprimante 3D ?', enonce_en: 'What does a 3D printer do?', duree_secondes: 25, points: 1, competence_id: ID.compFabrication }, [
       ['Elle fabrique un objet couche par couche', 'It builds an object layer by layer', true],
       ['Elle prend des photos en relief', 'It takes 3D photos', false],
       ['Elle imprime sur du papier épais', 'It prints on thick paper', false],
     ]),
     q({ type: 'qcm_unique', enonce_fr: 'Quel matériau utilise le plus souvent l’imprimante de l’atelier ?', enonce_en: 'Which material does the workshop printer use most often?', duree_secondes: 25, points: 1, competence_id: ID.compMateriau }, [
-      ['Le PLA, un plastique fait à partir de maïs', 'PLA, a plastic made from corn', true],
-      ['Le fer', 'Iron', false],
-      ['Le bois', 'Wood', false],
-      ['Le verre', 'Glass', false],
+      ['Le PLA, un plastique fait à partir de maïs', 'PLA, a plastic made from corn', true, 'pla'],
+      ['Le fer', 'Iron', false, 'fer'],
+      ['Le bois', 'Wood', false, 'bois'],
+      ['Le verre', 'Glass', false, 'verre'],
     ]),
-    q({ type: 'qcm_multiple', mode_bareme: 'proportionnel', enonce_fr: 'Coche les étapes nécessaires pour imprimer un objet.', enonce_en: 'Tick the steps needed to print an object.', duree_secondes: 40, points: 3, competence_id: ID.compChaine }, [
+    q({ type: 'qcm_multiple', mode_bareme: 'proportionnel', image: img('trancheur'), enonce_fr: 'Coche les étapes nécessaires pour imprimer un objet.', enonce_en: 'Tick the steps needed to print an object.', duree_secondes: 40, points: 3, competence_id: ID.compChaine }, [
       ['Dessiner l’objet en 3D sur l’ordinateur', 'Draw the object in 3D on the computer', true],
       ['Préparer le fichier avec un trancheur', 'Prepare the file with a slicer', true],
       ['Lancer l’impression', 'Start the print', true],
       ['Scanner une feuille de papier', 'Scan a sheet of paper', false],
     ]),
     q({
-      type: 'qro_ia', enonce_fr: 'Cite un objet utile que tu pourrais imprimer en 3D, et dis à quoi il servirait.', enonce_en: 'Name a useful object you could 3D print, and say what it would be for.',
+      type: 'qro_ia', image: img('imprimante3d'), enonce_fr: 'Cite un objet utile que tu pourrais imprimer en 3D, et dis à quoi il servirait.', enonce_en: 'Name a useful object you could 3D print, and say what it would be for.',
       duree_secondes: 90, points: 2, competence_id: ID.compProjet,
       reponse_attendue_fr: 'Un objet concret et réalisable (porte-clé, support de téléphone, pièce de rechange…) avec un usage précis.',
       reponse_attendue_en: 'A concrete, feasible object (key ring, phone stand, spare part…) with a clear use.',
@@ -171,24 +174,24 @@ async function seed(db: BaseCamp) {
     }),
   ]
   const post3d = [
-    q({ type: 'qcm_unique', enonce_fr: 'Comment une imprimante 3D construit-elle un objet ?', enonce_en: 'How does a 3D printer build an object?', duree_secondes: 25, points: 1, competence_id: ID.compFabrication }, [
+    q({ type: 'qcm_unique', image: img('couches'), enonce_fr: 'Comment une imprimante 3D construit-elle un objet ?', enonce_en: 'How does a 3D printer build an object?', duree_secondes: 25, points: 1, competence_id: ID.compFabrication }, [
       ['En le sculptant dans un bloc', 'By carving it out of a block', false],
       ['En empilant de fines couches de matière', 'By stacking thin layers of material', true],
       ['En le moulant d’un seul coup', 'By moulding it in one go', false],
     ], pre3d[0]),
-    q({ type: 'qcm_unique', enonce_fr: 'Le PLA est…', enonce_en: 'PLA is…', duree_secondes: 25, points: 1, competence_id: ID.compMateriau }, [
+    q({ type: 'qcm_unique', image: img('pla'), enonce_fr: 'Le PLA est…', enonce_en: 'PLA is…', duree_secondes: 25, points: 1, competence_id: ID.compMateriau }, [
       ['un métal', 'a metal', false],
       ['un plastique d’origine végétale', 'a plant-based plastic', true],
       ['une sorte de colle', 'a kind of glue', false],
     ], pre3d[1]),
-    q({ type: 'qcm_multiple', mode_bareme: 'proportionnel', enonce_fr: 'Coche ce qu’on fait avant de lancer une impression 3D.', enonce_en: 'Tick what you do before starting a 3D print.', duree_secondes: 40, points: 3, competence_id: ID.compChaine }, [
+    q({ type: 'qcm_multiple', mode_bareme: 'proportionnel', image: img('imprimante3d'), enonce_fr: 'Coche ce qu’on fait avant de lancer une impression 3D.', enonce_en: 'Tick what you do before starting a 3D print.', duree_secondes: 40, points: 3, competence_id: ID.compChaine }, [
       ['Modéliser l’objet', 'Model the object', true],
       ['Le découper en couches avec un trancheur', 'Slice it into layers with a slicer', true],
       ['Vérifier que le plateau est propre et réglé', 'Check the bed is clean and level', true],
       ['Peindre l’objet', 'Paint the object', false],
     ], pre3d[2]),
     q({
-      type: 'qro_ia', enonce_fr: 'Quel objet as-tu conçu pendant l’atelier, et à quoi sert-il ?', enonce_en: 'Which object did you design during the workshop, and what is it for?',
+      type: 'qro_ia', image: img('couches'), enonce_fr: 'Quel objet as-tu conçu pendant l’atelier, et à quoi sert-il ?', enonce_en: 'Which object did you design during the workshop, and what is it for?',
       duree_secondes: 90, points: 2, competence_id: ID.compProjet,
       reponse_attendue_fr: 'Un objet concret conçu par l’élève, avec un usage précis.',
       reponse_attendue_en: 'A concrete object designed by the student, with a clear use.',
@@ -196,10 +199,10 @@ async function seed(db: BaseCamp) {
     }, [], pre3d[3]),
   ]
   const quiz3d = [
-    q({ type: 'qcm_unique', enonce_fr: 'Le logiciel qui découpe un modèle en couches s’appelle…', enonce_en: 'The software that slices a model into layers is called…', duree_secondes: 15, points: 1, competence_id: ID.compChaine }, [
+    q({ type: 'qcm_unique', image: img('trancheur'), enonce_fr: 'Le logiciel qui découpe un modèle en couches s’appelle…', enonce_en: 'The software that slices a model into layers is called…', duree_secondes: 15, points: 1, competence_id: ID.compChaine }, [
       ['un trancheur', 'a slicer', true], ['un navigateur', 'a browser', false], ['un tableur', 'a spreadsheet', false],
     ]),
-    q({ type: 'qcm_unique', enonce_fr: 'Imprimer un petit objet en 3D prend en général…', enonce_en: 'Printing a small 3D object usually takes…', duree_secondes: 15, points: 1, competence_id: ID.compFabrication }, [
+    q({ type: 'qcm_unique', image: img('imprimante3d'), enonce_fr: 'Imprimer un petit objet en 3D prend en général…', enonce_en: 'Printing a small 3D object usually takes…', duree_secondes: 15, points: 1, competence_id: ID.compFabrication }, [
       ['quelques secondes', 'a few seconds', false], ['de quelques minutes à quelques heures', 'from minutes to a few hours', true], ['plusieurs semaines', 'several weeks', false],
     ]),
   ]
@@ -305,8 +308,8 @@ async function seed(db: BaseCamp) {
       lieu: 'Lomé', statut: 'en_cours',
     })
     await db.atelier.bulkAdd([
-      { id: ID.atelierRobot, camp_id: ID.camp, technologie_id: ID.robotique, titre_fr: 'Mon premier robot', titre_en: 'My first robot' },
-      { id: ID.atelier3d, camp_id: ID.camp, technologie_id: ID.impression3d, titre_fr: 'Imprimer en 3D', titre_en: '3D printing' },
+      { id: ID.atelierRobot, camp_id: ID.camp, technologie_id: ID.robotique, titre_fr: 'Mon premier robot', titre_en: 'My first robot', image: img('robot') },
+      { id: ID.atelier3d, camp_id: ID.camp, technologie_id: ID.impression3d, titre_fr: 'Imprimer en 3D', titre_en: '3D printing', image: img('imprimante3d') },
     ])
     await db.groupe.bulkAdd([
       { id: ID.groupeA, atelier_id: ID.atelierRobot, nom: 'Groupe A', date: '2026-12-01', heure_debut: '09:00', heure_fin: '12:00', salle: 'Salle 1' },

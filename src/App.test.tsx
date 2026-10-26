@@ -53,10 +53,13 @@ describe('parcours élève complet dans l’interface', () => {
 
     expect(await screen.findByText('Question 2 sur 6')).toBeTruthy()
     expect(screen.getByText('Plusieurs réponses possibles')).toBeTruthy()
+    // réponses en images : une illustration par choix
+    expect(document.querySelector('.choix-illustres')).toBeTruthy()
+    expect(document.querySelectorAll('.choix-illustres .tuile-image')).toHaveLength(4)
     await repondre([/ultrasons/, /infrarouge/]) // 2 bonnes sur 3 → 2 points sur 3
 
     expect(await screen.findByText('Question 3 sur 6')).toBeTruthy()
-    expect(document.querySelector('.question-image')).toBeTruthy()
+    expect(document.querySelector('.question-illustration img')?.getAttribute('src')).toBe('demo/led.svg')
     await repondre([/Une LED/])
 
     expect(await screen.findByText('Question 4 sur 6')).toBeTruthy()

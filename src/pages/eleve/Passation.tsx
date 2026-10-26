@@ -160,12 +160,20 @@ function EcranQuestion({ question: q, numero, total, tentativeId, onSuivante }: 
 
       <p className="question-numero">{t.question(numero, total)}</p>
       <h1 id="enonce" className="enonce">{traduire(q, 'enonce', langue)}</h1>
-      {q.image && <img className="question-image" src={q.image} alt="" />}
+      {q.image && (
+        <figure className="question-illustration">
+          <img src={q.image} alt="" />
+        </figure>
+      )}
 
       {estQcm && (
         <>
           <p className="aide">{q.type === 'qcm_unique' ? t.uneReponse : t.plusieursReponses}</p>
-          <div className="choix" role={q.type === 'qcm_unique' ? 'radiogroup' : 'group'} aria-labelledby="enonce">
+          <div
+            className={`choix${q.choix.some((c) => c.image) ? ' choix-illustres' : ''}`}
+            role={q.type === 'qcm_unique' ? 'radiogroup' : 'group'}
+            aria-labelledby="enonce"
+          >
             {q.choix.map((c, i) => {
               const actif = coches.includes(c.id)
               return (
@@ -178,11 +186,13 @@ function EcranQuestion({ question: q, numero, total, tentativeId, onSuivante }: 
                   onClick={() => basculer(c.id)}
                   disabled={expire}
                 >
-                  <span className={`tuile-lettre${q.type === 'qcm_multiple' ? ' tuile-lettre-carree' : ''}`} aria-hidden="true">
-                    {String.fromCharCode(65 + i)}
-                  </span>
-                  <span className="tuile-texte">{traduire(c, 'texte', langue)}</span>
                   {c.image && <img src={c.image} alt="" className="tuile-image" />}
+                  <span className="tuile-legende">
+                    <span className={`tuile-lettre${q.type === 'qcm_multiple' ? ' tuile-lettre-carree' : ''}`} aria-hidden="true">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                    <span className="tuile-texte">{traduire(c, 'texte', langue)}</span>
+                  </span>
                 </button>
               )
             })}

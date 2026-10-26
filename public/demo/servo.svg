@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" role="img" aria-label="Servomoteur">
+<rect x="50" y="62" width="100" height="60" rx="8" fill="#2b59e0" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="36" y="74" width="128" height="12" rx="4" fill="#2b59e0" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="80" cy="62" r="14" fill="#dfe5ee" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect x="60" y="34" width="70" height="14" rx="7" fill="#fff" stroke="#142240" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" transform="rotate(-12 80 48)"/>
+<circle cx="80" cy="50" r="5" fill="#142240"/>
+<path d="M118 40 a30 30 0 0 1 24 20" fill="none" stroke="#ffc531" stroke-width="4" stroke-linecap="round"/></svg>
