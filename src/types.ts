@@ -9,6 +9,7 @@ export type ModeCorrection = 'ia_definitive' | 'ia_puis_formateur'
 export type TypeQuestion = 'qcm_unique' | 'qcm_multiple' | 'qro_ia' | 'qro_qualitative' | 'echelle'
 export type ModeBareme = 'tout_ou_rien' | 'proportionnel'
 export type ModeSession = 'libre' | 'pilote'
+export type StatutGroupe = 'a_venir' | 'en_cours' | 'termine'
 export type StatutSession = 'brouillon' | 'ouverte' | 'fermee'
 export type StatutTentative = 'en_cours' | 'soumise' | 'expiree'
 export type StatutCorrection = 'en_attente' | 'ia' | 'validee' | 'modifiee' | 'auto'
@@ -47,6 +48,8 @@ export interface Groupe {
   heure_debut: string
   heure_fin: string
   salle?: string
+  /** Démarré et clôturé par le formateur ; tant qu'il est « a_venir », aucune activité n'est accessible. */
+  statut: StatutGroupe
 }
 
 export interface Eleve {

@@ -46,6 +46,7 @@ describe('parcours élève (stockage local)', () => {
       }
       await repo.soumettreTentative(tentative.id)
     }
+    await repo.changerStatutSession(robot.activites[2].session.id, 'ouverte') // le formateur ouvre le post-test
     await passer(robot.activites[0], 1) // prétest : 1 point
     expect(await repo.progression(robot.activites[0].session.id, e.id)).toEqual({ pretest: { score: 1, score_max: 8 } })
     await passer(robot.activites[2], 4) // post-test : 1 + 3 + 1 + 1 = 6 points
@@ -54,6 +55,33 @@ describe('parcours élève (stockage local)', () => {
     })
     // l'autre atelier n'est pas concerné
     expect(await repo.progression(impression.activites[0].session.id, e.id)).toEqual({})
+  })
+
+  it('refuse un atelier pas encore démarré, puis l’autorise quand le formateur le lance', async () => {
+    const e = (await repo.trouverEleveParCode('AMA234'))!
+    const [robot, impression] = await repo.ateliersPourEleve(e.id)
+    expect(robot.groupe.statut).toBe('en_cours')
+    expect(impression.groupe.statut).toBe('a_venir')
+    // l'atelier à venir est visible avec ses activités…
+    expect(impression.activites.map((s) => s.fiche.type)).toEqual(['pretest', 'quiz', 'posttest', 'satisfaction'])
+    // …mais son prétest est refusé
+    const pre3d = impression.activites[0].session.id
+    await expect(repo.demarrerTentative(pre3d, e.id, 'fr')).rejects.toMatchObject({ code: 'atelier_inactif' })
+    await repo.changerStatutGroupe(impression.groupe.id, 'en_cours')
+    expect((await repo.demarrerTentative(pre3d, e.id, 'fr')).tentative.statut).toBe('en_cours')
+    // une fois l'atelier terminé, plus rien ne démarre
+    await repo.changerStatutGroupe(robot.groupe.id, 'termine')
+    await expect(repo.demarrerTentative(robot.activites[0].session.id, e.id, 'fr')).rejects.toMatchObject({ code: 'atelier_inactif' })
+  })
+
+  it('dans un atelier en cours, une activité pas encore ouverte est refusée', async () => {
+    const e = (await repo.trouverEleveParCode('AMA234'))!
+    const [robot] = await repo.ateliersPourEleve(e.id)
+    const post = robot.activites[2]
+    expect(post.session.statut).toBe('brouillon')
+    await expect(repo.demarrerTentative(post.session.id, e.id, 'fr')).rejects.toMatchObject({ code: 'session_fermee' })
+    await repo.changerStatutSession(post.session.id, 'ouverte')
+    expect((await repo.demarrerTentative(post.session.id, e.id, 'fr')).tentative).toBeTruthy()
   })
 
   it('passe un prétest complet : notation, attente de la QRO IA, classement', async () => {

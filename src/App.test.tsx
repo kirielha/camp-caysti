@@ -130,6 +130,16 @@ describe('parcours élève complet dans l’interface', () => {
     const titres = (await screen.findAllByRole('heading', { level: 2 })).map((h) => h.textContent)
     expect(titres).toEqual(['Mon premier robot', 'Imprimer en 3D'])
 
+    // L'atelier de l'après-midi est visible mais pas encore démarré : boutons grisés
+    const impression = screen.getByRole('heading', { name: 'Imprimer en 3D' }).closest('article')!
+    expect(within(impression).getByText('À venir')).toBeTruthy()
+    expect(within(impression).getByText(/n’a pas encore commencé/)).toBeTruthy()
+    expect(within(impression).queryAllByRole('link', { name: 'Commencer' })).toHaveLength(0)
+    const boutons3d = within(impression).getAllByRole('button', { name: 'Commencer' })
+    expect(boutons3d.length).toBe(4)
+    expect(boutons3d.every((b) => (b as HTMLButtonElement).disabled)).toBe(true)
+    expect(within(impression).getAllByText('Commence à 14 h 00').length).toBe(4)
+
     // Prétest robotique : tout faux en passant chaque question
     const robot = screen.getByRole('heading', { name: 'Mon premier robot' }).closest('article')!
     const pre = within(robot).getByRole('heading', { name: /Prétest/ }).closest('li')!
@@ -143,9 +153,15 @@ describe('parcours élève complet dans l’interface', () => {
     await waitFor(() => expect(document.querySelectorAll('.classement-ligne').length).toBeGreaterThan(0))
     await u.click(screen.getByRole('link', { name: 'Retour à mes activités' }))
 
-    // Post-test robotique : une bonne réponse
+    // Post-test robotique : grisé tant que le formateur ne l'a pas ouvert
     const robot2 = (await screen.findByRole('heading', { name: 'Mon premier robot' })).closest('article')!
-    const post = within(robot2).getByRole('heading', { name: /Post-test/ }).closest('li')!
+    let post = within(robot2).getByRole('heading', { name: /Post-test/ }).closest('li')!
+    expect(within(post).getByText('Pas encore ouvert')).toBeTruthy()
+    expect((within(post).getByRole('button', { name: 'Commencer' }) as HTMLButtonElement).disabled).toBe(true)
+    await u.click(within(robot2).getByRole('button', { name: 'Ouvrir « Post-test »' }))
+    const lignePost = () => within(screen.getByRole('heading', { name: 'Mon premier robot' }).closest('article')!).getByRole('heading', { name: /Post-test/ }).closest('li')!
+    await waitFor(() => expect(within(lignePost()).queryByText('Pas encore ouvert')).toBeNull())
+    post = lignePost()
     await u.click(within(post).getByRole('link', { name: 'Commencer' }))
     await u.click(await screen.findByRole('button', { name: 'Je suis prêt·e' }))
     await screen.findByText('Question 1 sur 5')

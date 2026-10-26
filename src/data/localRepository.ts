@@ -52,7 +52,7 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
           const technologie = atelier && (await db.technologie.get(atelier.technologie_id))
           if (!groupe || !atelier || !technologie) return undefined
           const sessions = (await db.session_evaluation.where('groupe_id').equals(groupe.id).toArray())
-            .filter((s) => s.statut === 'ouverte')
+
           const activites = await Promise.all(
             sessions.map(async (s) => {
               const d = await detailSession(s.id)
@@ -95,7 +95,10 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
 
     async demarrerTentative(sessionId, eleveId, langue) {
       const session = await db.session_evaluation.get(sessionId)
-      if (!session || session.statut !== 'ouverte') throw new ErreurMetier('session_fermee')
+      if (!session) throw new ErreurMetier('session_fermee')
+      const groupe = await db.groupe.get(session.groupe_id)
+      if (groupe?.statut !== 'en_cours') throw new ErreurMetier('atelier_inactif')
+      if (session.statut !== 'ouverte') throw new ErreurMetier('session_fermee')
       const groupeOk = await db.inscription.where('[eleve_id+groupe_id]').equals([eleveId, session.groupe_id]).count()
       if (!groupeOk) throw new ErreurMetier('non_inscrit')
 
@@ -160,6 +163,19 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
       const eleves = await db.eleve.bulkGet(tentatives.map((t) => t.eleve_id))
       const parId = new Map(eleves.filter((e): e is Eleve => !!e).map((e) => [e.id, e]))
       return classer(tentatives, parId, limite)
+    },
+
+    async changerStatutGroupe(groupeId, statut) {
+      await db.groupe.update(groupeId, { statut })
+    },
+
+    async changerStatutSession(sessionId, statut) {
+      const maintenantIso = maintenant()
+      await db.session_evaluation.update(sessionId, {
+        statut,
+        ...(statut === 'ouverte' ? { ouverte_le: maintenantIso } : {}),
+        ...(statut === 'fermee' ? { fermee_le: maintenantIso } : {}),
+      })
     },
 
     async fiche(ficheId) {

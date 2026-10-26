@@ -20,6 +20,7 @@ export function Passation() {
   const [tentative, setTentative] = useState<Tentative>()
   const [index, setIndex] = useState(0)
   const [reprise, setReprise] = useState(false)
+  const [motifFermeture, setMotifFermeture] = useState<'atelier_inactif' | 'session_fermee'>('session_fermee')
 
   // Chargement de la session et démarrage (ou reprise) de la tentative
   useEffect(() => {
@@ -41,7 +42,10 @@ export function Passation() {
       } catch (e) {
         if (!actif) return
         if (e instanceof ErreurMetier && e.code === 'deja_soumise') naviguer(`/eleve/session/${sessionId}/resultat`, { replace: true })
-        else setPhase('fermee')
+        else {
+          if (e instanceof ErreurMetier && e.code === 'atelier_inactif') setMotifFermeture('atelier_inactif')
+          setPhase('fermee')
+        }
       }
     })()
     return () => { actif = false }
@@ -66,7 +70,7 @@ export function Passation() {
   if (phase === 'fermee') {
     return (
       <section>
-        <p className="vide">{t.sessionFermee}</p>
+        <p className="vide">{motifFermeture === 'atelier_inactif' ? t.atelierInactif : t.sessionFermee}</p>
         <Link className="bouton" to="/eleve">{t.retourActivites}</Link>
       </section>
     )

@@ -81,7 +81,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .bouton:active:not(:disabled) { transform: scale(0.97); }
 .bouton-principal { background: var(--bleu); border-color: var(--bleu); color: var(--blanc); box-shadow: 0 4px 0 var(--bleu-fonce); }
 .bouton-principal:hover:not(:disabled) { background: var(--bleu-fonce); }
-.bouton:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.bouton:disabled { opacity: 1; cursor: not-allowed; box-shadow: none; background: var(--ciel-fonce); border-color: var(--ciel-fonce); color: var(--encre-douce); }
 .bouton-large { width: 100%; margin-top: 24px; }
 
 .lien {
@@ -122,6 +122,19 @@ button, input, textarea { font: inherit; color: inherit; }
 .atelier-titre { font-family: var(--titre); font-weight: 800; font-size: 1.6rem; line-height: 1.15; margin: 4px 0 0; }
 .atelier-techno { margin: 0; font-weight: 600; color: var(--techno); filter: brightness(0.85); }
 .atelier-vide { padding: 0 20px 18px; }
+.atelier-message { margin: 0 20px 14px; padding: 10px 14px; border-radius: var(--rayon-petit); background: var(--soleil-clair); font-size: 0.95rem; }
+.etiquette-statut { border-radius: 999px; padding: 1px 10px; font-weight: 600; font-size: 0.8rem; }
+.etiquette-statut-en_cours { background: var(--feuille); color: var(--blanc); }
+.etiquette-statut-a_venir { background: var(--ciel-fonce); color: var(--encre); }
+.etiquette-statut-termine { background: var(--encre-douce); color: var(--blanc); }
+/* Atelier pas encore démarré : visible mais atténué */
+.atelier-a_venir .atelier-image, .atelier-a_venir .activites { opacity: 0.55; filter: grayscale(0.6); }
+.activite-blocage { font-size: 0.85rem; color: var(--encre-douce); margin-top: 6px; font-weight: 500; }
+.activite-bloquee h3 { color: var(--encre-douce); }
+.demo-formateur { margin: 0; padding: 12px 20px 16px; border-top: 2px dashed var(--ciel-fonce); font-size: 0.88rem; color: var(--encre-douce); }
+.demo-formateur p { margin: 0 0 8px; }
+.demo-formateur-boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo-formateur .puce { letter-spacing: normal; font-size: 0.88rem; border-style: dashed; }
 
 .progression {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 20px 12px;

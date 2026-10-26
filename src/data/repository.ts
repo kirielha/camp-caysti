@@ -4,10 +4,10 @@
 
 import type {
   AtelierPourEleve, Eleve, Fiche, Langue, LigneClassement, Progression, QuestionAvecChoix, Reponse,
-  SessionPourEleve, Tentative,
+  SessionPourEleve, StatutGroupe, StatutSession, Tentative,
 } from '../types'
 
-export type CodeErreur = 'code_inconnu' | 'deja_soumise' | 'session_fermee' | 'non_inscrit'
+export type CodeErreur = 'code_inconnu' | 'deja_soumise' | 'session_fermee' | 'non_inscrit' | 'atelier_inactif'
 
 export class ErreurMetier extends Error {
   code: CodeErreur
@@ -25,8 +25,9 @@ export interface Repository {
   changerLangueEleve(eleveId: string, langue: Langue): Promise<void>
 
   /**
-   * Ateliers de l'élève pour le camp en cours, triés par date et heure de son groupe,
-   * chacun avec ses activités ouvertes (prétest, quiz, post-test, avis) et sa tentative éventuelle.
+   * Ateliers de l'élève, triés par date et heure de son groupe, chacun avec toutes ses activités
+   * (prétest, quiz, post-test, avis) et la tentative éventuelle de l'élève. L'écran décide lesquelles
+   * sont accessibles selon le statut du groupe et de chaque session.
    */
   ateliersPourEleve(eleveId: string): Promise<AtelierPourEleve[]>
 
@@ -53,6 +54,14 @@ export interface Repository {
 
   /** Top N de la session. */
   classement(sessionId: string, limite?: number): Promise<LigneClassement[]>
+
+  // ---------- Actions du formateur (utilisées par la démo en attendant l'espace formateur) ----------
+
+  /** Change le statut d'un groupe : a_venir → en_cours → termine. */
+  changerStatutGroupe(groupeId: string, statut: StatutGroupe): Promise<void>
+
+  /** Ouvre ou ferme une activité pour son groupe. */
+  changerStatutSession(sessionId: string, statut: StatutSession): Promise<void>
 
   /** Fiche seule (en-têtes). */
   fiche(ficheId: string): Promise<Fiche | undefined>

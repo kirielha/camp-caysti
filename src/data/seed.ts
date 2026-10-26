@@ -29,7 +29,7 @@ const ID = {
 export const CODES_DEMO = ['AMA234', 'YAW567', 'KEM789']
 
 /** À incrémenter à chaque changement des données de démo : les navigateurs les rechargent alors. */
-const VERSION_DEMO = '3'
+const VERSION_DEMO = '4'
 const CLE_VERSION = 'camp-caysti:version-demo'
 
 export async function seedSiVide(db: BaseCamp) {
@@ -238,23 +238,25 @@ async function seed(db: BaseCamp) {
   // Sessions : chaque fiche ouverte pour le groupe de son atelier
   let ns = 200
   const sessions: SessionEvaluation[] = []
-  const ouvrir = (fiche_id: string, groupe_id: string, classement_affiche = true) => {
+  // Robotique (en cours) : prétest et quiz ouverts, post-test et avis pas encore ouverts.
+  // Impression 3D (à venir) : prétest prêt, il deviendra accessible au démarrage de l'atelier.
+  const creerSession = (fiche_id: string, groupe_id: string, statut: SessionEvaluation['statut'], classement_affiche = true) => {
     const id = u(ns++)
     sessions.push({
-      id, fiche_id, groupe_id, mode: 'libre', mode_correction: 'ia_definitive', statut: 'ouverte',
-      classement_affiche, etape: 'attente', ouverte_le: '2026-12-01T09:00:00Z',
+      id, fiche_id, groupe_id, mode: 'libre', mode_correction: 'ia_definitive', statut,
+      classement_affiche, etape: 'attente', ouverte_le: statut === 'ouverte' ? '2026-12-01T09:00:00Z' : undefined,
     })
     return id
   }
   const S = {
-    preRobot: ouvrir(ID.fichePreRobot, ID.groupeA),
-    quizRobot: ouvrir(ID.ficheQuizRobot, ID.groupeA),
-    postRobot: ouvrir(ID.fichePostRobot, ID.groupeA),
-    avisRobot: ouvrir(ID.ficheAvis, ID.groupeA, false),
-    pre3d: ouvrir(ID.fichePre3d, ID.groupeB),
-    quiz3d: ouvrir(ID.ficheQuiz3d, ID.groupeB),
-    post3d: ouvrir(ID.fichePost3d, ID.groupeB),
-    avis3d: ouvrir(ID.ficheAvis, ID.groupeB, false),
+    preRobot: creerSession(ID.fichePreRobot, ID.groupeA, 'ouverte'),
+    quizRobot: creerSession(ID.ficheQuizRobot, ID.groupeA, 'ouverte'),
+    postRobot: creerSession(ID.fichePostRobot, ID.groupeA, 'brouillon'),
+    avisRobot: creerSession(ID.ficheAvis, ID.groupeA, 'brouillon', false),
+    pre3d: creerSession(ID.fichePre3d, ID.groupeB, 'ouverte'),
+    quiz3d: creerSession(ID.ficheQuiz3d, ID.groupeB, 'brouillon'),
+    post3d: creerSession(ID.fichePost3d, ID.groupeB, 'brouillon'),
+    avis3d: creerSession(ID.ficheAvis, ID.groupeB, 'brouillon', false),
   }
 
   // Élèves : tous inscrits aux deux ateliers de la journée
@@ -293,7 +295,6 @@ async function seed(db: BaseCamp) {
   }
   resultats(S.preRobot, 8, [[7, 182000], [6, 150000], [6, 171000], [5, 140000], [4.5, 198000], [4, 120000], [3, 160000], [2.5, 210000]])
   resultats(S.postRobot, 8, [[8, 161000], [7.5, 139000], [7, 150000], [7, 128000], [6, 170000], [6, 115000], [5, 149000], [4.5, 190000]])
-  resultats(S.pre3d, 7, [[5, 120000], [4, 99000], [6, 131000], [3, 88000], [4, 140000], [2, 102000], [5, 117000], [3.5, 150000]])
 
   await db.transaction('rw', db.tables, async () => {
     await db.technologie.bulkAdd([
@@ -312,8 +313,8 @@ async function seed(db: BaseCamp) {
       { id: ID.atelier3d, camp_id: ID.camp, technologie_id: ID.impression3d, titre_fr: 'Imprimer en 3D', titre_en: '3D printing', image: img('imprimante3d') },
     ])
     await db.groupe.bulkAdd([
-      { id: ID.groupeA, atelier_id: ID.atelierRobot, nom: 'Groupe A', date: '2026-12-01', heure_debut: '09:00', heure_fin: '12:00', salle: 'Salle 1' },
-      { id: ID.groupeB, atelier_id: ID.atelier3d, nom: 'Groupe B', date: '2026-12-01', heure_debut: '14:00', heure_fin: '17:00', salle: 'Fab lab' },
+      { id: ID.groupeA, atelier_id: ID.atelierRobot, nom: 'Groupe A', date: '2026-12-01', heure_debut: '09:00', heure_fin: '12:00', salle: 'Salle 1', statut: 'en_cours' },
+      { id: ID.groupeB, atelier_id: ID.atelier3d, nom: 'Groupe B', date: '2026-12-01', heure_debut: '14:00', heure_fin: '17:00', salle: 'Fab lab', statut: 'a_venir' },
     ])
     await db.competence.bulkAdd([
       { id: ID.compCapteur, technologie_id: ID.robotique, libelle_fr: 'Reconnaître un capteur', libelle_en: 'Recognise a sensor' },
