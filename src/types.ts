@@ -219,6 +219,14 @@ export interface SessionEvaluation {
   lancee_par?: string
 }
 
+/** Élève connecté à une session en mode piloté (salle d'attente et suivi en direct). */
+export interface ParticipantSession {
+  session_id: string
+  eleve_id: string
+  arrive_le: string
+  connecte: boolean
+}
+
 export interface Tentative {
   id: string
   session_id: string
@@ -334,4 +342,17 @@ export interface AtelierDuCamp {
   atelier: Atelier
   technologie: Technologie
   groupes: { groupe: Groupe; formateurs: { utilisateur: Utilisateur; role: 'principal' | 'secondaire' }[]; nb_eleves: number }[]
+}
+
+// ---------------------------------------------------------------- Mode piloté
+
+/** État d'une partie pilotée, vu par le formateur comme par l'élève. */
+export interface EtatPilote {
+  detail: SessionPourEleve
+  questions: QuestionAvecChoix[]
+  /** Index de la question courante (-1 avant la première). */
+  index: number
+  participants: { eleve: Eleve; arrive_le: string }[]
+  /** Réponses déjà reçues pour la question courante. */
+  reponsesQuestion: Reponse[]
 }

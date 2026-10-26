@@ -4,7 +4,7 @@
 import type { LigneImport } from '../lib/importEleves'
 import type {
   Atelier, AtelierDuCamp, Camp, Choix, Competence, DetailGroupe, Ecole, Eleve, EleveDuCamp, Fiche, Groupe,
-  GroupePourFormateur, LangueParlee, LigneResultat, Personnel, Question, StatutGroupe, StatutSession, Technologie, Tuteur, Utilisateur,
+  GroupePourFormateur, LangueParlee, LigneResultat, ModeSession, Personnel, Question, StatutGroupe, StatutSession, Technologie, Tuteur, Utilisateur,
 } from '../types'
 
 /** Question telle qu'éditée dans l'éditeur de fiches (avec ses choix). */
@@ -27,6 +27,8 @@ export interface ResumeFiche {
   nb_sessions: number
 }
 
+export type ActionPilote = 'suivante' | 'reveler' | 'classement' | 'terminer'
+
 export class ErreurDroits extends Error {
   constructor(message = 'Action non autorisée pour ce compte') {
     super(message)
@@ -48,6 +50,16 @@ export interface StaffRepository {
   changerStatutGroupe(groupeId: string, statut: StatutGroupe, personnel: Personnel): Promise<void>
   changerStatutSession(sessionId: string, statut: StatutSession, personnel: Personnel): Promise<void>
   changerAffichageClassement(sessionId: string, affiche: boolean, personnel: Personnel): Promise<void>
+  /** Libre (chacun à son rythme) ou piloté (le formateur fait défiler). Impossible une fois que des élèves ont commencé. */
+  changerModeSession(sessionId: string, mode: ModeSession, personnel: Personnel): Promise<void>
+  /**
+   * Commandes du mode piloté :
+   * - suivante : affiche la question suivante sur tous les écrans et lance le chrono (ou termine après la dernière)
+   * - reveler : montre la bonne réponse et la répartition des réponses
+   * - classement : affiche le classement intermédiaire
+   * - terminer : clôt la partie, calcule les scores et ferme l'activité
+   */
+  piloter(sessionId: string, action: ActionPilote, personnel: Personnel): Promise<void>
   /** Programme une fiche dans un groupe (session en brouillon, à ouvrir le moment venu). */
   ajouterActivite(groupeId: string, ficheId: string, personnel: Personnel): Promise<void>
   retirerActivite(sessionId: string, personnel: Personnel): Promise<void>

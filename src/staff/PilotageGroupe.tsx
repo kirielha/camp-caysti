@@ -152,6 +152,7 @@ function LigneActivite({ a, nbEleves, atelierEnCours, agir }: {
         <p className="activite-meta">
           <span className={`etiquette-type etiquette-${a.fiche.type}`}>{libelleType[a.fiche.type]}</span>
           <span className={`etat-session etat-session-${s.statut}`}>{libelleStatutSession[s.statut]}</span>
+          {s.mode === 'pilote' && <span className="etiquette-direct">En direct</span>}
         </p>
         <h3>{a.fiche.titre_fr}</h3>
         <p className="aide">{a.nb_questions} questions</p>
@@ -161,6 +162,18 @@ function LigneActivite({ a, nbEleves, atelierEnCours, agir }: {
         </div>
       </div>
       <div className="activite-staff-actions">
+        {a.fiche.type !== 'satisfaction' && a.nb_soumises + a.nb_en_cours === 0 && s.statut !== 'fermee' && (
+          <label className="mode-session">
+            <span>Déroulement</span>
+            <select className="champ" value={s.mode} onChange={(e) => agir(() => staff.changerModeSession(s.id, e.target.value as 'libre' | 'pilote', moi))}>
+              <option value="libre">Chacun à son rythme</option>
+              <option value="pilote">Piloté en direct (type Kahoot)</option>
+            </select>
+          </label>
+        )}
+        {s.mode === 'pilote' && s.etape !== 'terminee' && (
+          <Link className="bouton bouton-principal" to={`/formateur/direct/${s.id}`}>Animer en direct</Link>
+        )}
         {s.statut !== 'ouverte' ? (
           <button type="button" className="bouton bouton-principal" onClick={() => agir(() => staff.changerStatutSession(s.id, 'ouverte', moi))}>
             {s.statut === 'fermee' ? 'Rouvrir' : 'Ouvrir'}

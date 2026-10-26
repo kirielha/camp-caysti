@@ -496,3 +496,89 @@ fieldset.bloc-gestion legend { float: left; width: 100%; }
 .tableau-import td { vertical-align: top; }
 .ligne-erreur td { background: #fdeeee; }
 .chiffre-alerte dd { color: var(--corail); }
+
+/* =====================================================================
+   Mode piloté (type Kahoot)
+   Chaque réponse a une couleur ET une forme : triangle, losange, rond, carré.
+   ===================================================================== */
+.etiquette-direct {
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 1px 10px 1px 8px;
+  background: var(--corail); color: var(--blanc); font-weight: 600; font-size: 0.8rem;
+}
+.etiquette-direct::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--blanc); }
+.mode-session { display: grid; gap: 2px; font-size: 0.82rem; font-weight: 600; justify-items: end; }
+.mode-session .champ { min-height: 40px; font-weight: 500; flex: none; }
+
+.forme-0 { --c: #e5484d; } .forme-1 { --c: #2b59e0; } .forme-2 { --c: #e8a21c; } .forme-3 { --c: #17a07a; }
+.choix-projete-forme { flex: none; width: 34px; height: 34px; background: var(--c); }
+.forme-0 .choix-projete-forme { clip-path: polygon(50% 6%, 96% 92%, 4% 92%); }
+.forme-1 .choix-projete-forme { clip-path: polygon(50% 2%, 98% 50%, 50% 98%, 2% 50%); }
+.forme-2 .choix-projete-forme { border-radius: 50%; }
+.forme-3 .choix-projete-forme { border-radius: 4px; transform: scale(0.86); }
+
+/* Écran du formateur */
+.animation { display: grid; gap: 14px; }
+.animation-barre { display: flex; justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+.animation-connectes { font-weight: 700; font-variant-numeric: tabular-nums; background: var(--blanc); border-radius: 999px; padding: 4px 14px; }
+.animation-attente, .animation-classement { display: grid; gap: 14px; justify-items: center; text-align: center; padding: 24px 0; }
+.animation-consigne { font-size: 1.15rem; margin: 0; }
+.animation-grand-nombre { margin: 0; font-family: var(--titre); font-weight: 800; font-size: clamp(3rem, 10vw, 5rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.animation-grand-nombre span { font-size: 1.1rem; font-weight: 600; color: var(--encre-douce); font-family: var(--texte); margin-left: 8px; }
+.animation-noms { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 760px; }
+.animation-noms li { background: var(--blanc); border-radius: 999px; padding: 6px 14px; font-weight: 600; }
+.bouton-geant { min-height: 68px; padding: 0 40px; font-size: 1.3rem; }
+.animation-question { display: grid; gap: 12px; }
+.animation-enonce { font-family: var(--titre); font-weight: 800; font-size: clamp(1.8rem, 4.5vw, 2.8rem); line-height: 1.12; margin: 0; max-width: 28ch; }
+.animation-image { width: min(320px, 70%); background: var(--blanc); border-radius: var(--rayon); padding: 10px; }
+.animation-pied { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; width: 100%; }
+.animation-classement .animation-pied { justify-content: center; }
+.animation-reponses { font-size: 3rem; }
+.animation-bilan { font-weight: 600; font-size: 1.1rem; margin: 0; }
+
+.choix-projetes { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.choix-projete {
+  position: relative; display: flex; align-items: center; gap: 16px; min-height: 84px; padding: 14px 18px; overflow: hidden;
+  border-radius: var(--rayon); background: var(--c); color: var(--blanc); font-weight: 700; font-size: 1.3rem;
+}
+.choix-projete .choix-projete-forme { background: var(--blanc); }
+.choix-projete-texte { flex: 1; position: relative; z-index: 1; }
+.choix-projete-image { width: 64px; background: var(--blanc); border-radius: 10px; padding: 4px; position: relative; z-index: 1; }
+.choix-projete-faux { opacity: 0.35; }
+.choix-projete-bon { outline: 5px solid var(--encre); outline-offset: 3px; }
+.choix-projete-bon .choix-projete-texte::after { content: ' ✓'; }
+.choix-projete-compte { display: flex; align-items: center; gap: 8px; min-width: 96px; position: relative; z-index: 1; font-variant-numeric: tabular-nums; }
+.choix-projete-barre { height: 10px; min-width: 4px; background: rgba(255, 255, 255, 0.85); border-radius: 999px; }
+
+.podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 8px 0; }
+.podium-marche { display: grid; justify-items: center; gap: 4px; width: min(180px, 30vw); }
+.podium-nom { font-weight: 700; font-size: 1.1rem; text-align: center; }
+.podium-score { color: var(--encre-douce); font-variant-numeric: tabular-nums; }
+.podium-socle {
+  width: 100%; display: grid; place-items: center; border-radius: var(--rayon-petit) var(--rayon-petit) 0 0;
+  font-family: var(--titre); font-weight: 800; font-size: 2.4rem; color: var(--encre); background: var(--ciel-fonce);
+}
+.podium-marche-1 .podium-socle { height: 150px; background: var(--soleil); }
+.podium-marche-2 .podium-socle { height: 110px; }
+.podium-marche-3 .podium-socle { height: 80px; }
+
+/* Écran de l'élève */
+.pilote-eleve { display: grid; gap: 12px; }
+.pilote-attente { display: grid; justify-items: center; text-align: center; gap: 8px; padding: 6vh 0; }
+.pilote-attente p { margin: 0; max-width: 40ch; }
+.pulsation { width: 72px; height: 72px; border-radius: 50%; background: var(--bleu); margin-bottom: 12px; animation: pulsation 1.6s ease-in-out infinite; }
+@keyframes pulsation { 0%, 100% { transform: scale(0.85); opacity: 0.6; } 50% { transform: scale(1); opacity: 1; } }
+.pilote-message {
+  margin: 8vh 0 0; padding: 28px 20px; text-align: center; border-radius: var(--rayon);
+  background: var(--blanc); font-family: var(--titre); font-weight: 700; font-size: 1.5rem;
+}
+.choix-pilotes .tuile { border-left: 10px solid var(--c); }
+.choix-pilotes .tuile-active { border-color: var(--c); border-left-width: 10px; background: #f2f6ff; }
+.choix-pilotes .tuile-legende { gap: 12px; }
+.choix-pilotes .choix-projete-forme { width: 26px; height: 26px; }
+.pilote-revelation { margin-top: 6vh; padding: 28px 20px; border-radius: var(--rayon); text-align: center; display: grid; gap: 6px; }
+.pilote-revelation p { margin: 0; }
+.pilote-juste { background: #e3f5ee; }
+.pilote-faux { background: #fdeeee; }
+.pilote-verdict { font-family: var(--titre); font-weight: 800; font-size: 2.2rem; }
+.pilote-points { font-family: var(--titre); font-weight: 800; font-size: 1.6rem; color: var(--feuille); }
+.pilote-rang { text-align: center; font-family: var(--titre); font-weight: 800; font-size: 2rem; margin: 8px 0; }

@@ -3,11 +3,12 @@
 // implémentation Supabase sans toucher aux écrans.
 
 import type {
-  AtelierPourEleve, Eleve, Fiche, Langue, LigneClassement, Progression, QuestionAvecChoix, Reponse,
+  AtelierPourEleve, Eleve, EtatPilote, Fiche, Langue, LigneClassement, Progression, QuestionAvecChoix, Reponse,
   SessionPourEleve, StatutGroupe, StatutSession, Tentative,
 } from '../types'
 
 export type CodeErreur = 'code_inconnu' | 'deja_soumise' | 'session_fermee' | 'non_inscrit' | 'atelier_inactif'
+  | 'hors_question' | 'deja_repondu' | 'pas_pilote' | 'session_pilotee'
 
 export class ErreurMetier extends Error {
   code: CodeErreur
@@ -51,6 +52,30 @@ export interface Repository {
 
   /** Tentative d'un élève pour une session, avec le nombre de réponses encore à corriger. */
   tentativeDe(sessionId: string, eleveId: string): Promise<{ tentative: Tentative; en_attente: number } | undefined>
+
+  // ---------- Mode piloté ----------
+
+  /** L'élève entre dans la salle : il est compté parmi les participants et sa tentative est créée. */
+  rejoindreSessionPilotee(sessionId: string, eleveId: string, langue: Langue): Promise<Tentative>
+
+  /**
+   * Réponse à la question que le formateur affiche. Refusée si ce n'est plus la question en cours,
+   * si le temps est écoulé ou si l'élève a déjà répondu. Le temps de réponse est compté depuis le
+   * lancement de la question par le formateur.
+   */
+  repondrePilote(tentativeId: string, questionId: string, saisie: { choix_coches: string[]; texte?: string }): Promise<Reponse>
+
+  /** État de la partie (question courante, participants, réponses reçues). */
+  etatPilote(sessionId: string): Promise<EtatPilote>
+
+  /** Classement calculé sur les réponses déjà notées (pendant la partie, avant la clôture). */
+  classementEnDirect(sessionId: string, limite?: number): Promise<LigneClassement[]>
+
+  /**
+   * Prévient à chaque changement de la session (étape, question, participants, réponses).
+   * Renvoie la fonction d'arrêt. En local : observation de la base ; avec Supabase : canal temps réel.
+   */
+  surveillerSession(sessionId: string, auChangement: () => void): () => void
 
   /** Top N de la session. */
   classement(sessionId: string, limite?: number): Promise<LigneClassement[]>

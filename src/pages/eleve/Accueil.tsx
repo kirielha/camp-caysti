@@ -107,7 +107,10 @@ function Activite({ s, a, nb }: { s: SessionPourEleve; a: AtelierAffiche; nb: nu
   return (
     <li className={`activite${fait ? ' activite-faite' : ''}${blocage ? ' activite-bloquee' : ''}`}>
       <div className="activite-texte">
-        <p className="activite-meta"><span className={`etiquette-type etiquette-${s.fiche.type}`}>{t.typeFiche[s.fiche.type]}</span></p>
+        <p className="activite-meta">
+          <span className={`etiquette-type etiquette-${s.fiche.type}`}>{t.typeFiche[s.fiche.type]}</span>
+          {s.session.mode === 'pilote' && <span className="etiquette-direct">{t.enDirect}</span>}
+        </p>
         <h3>{traduire(s.fiche, 'titre', langue)}</h3>
         <p className="aide">{t.nbQuestions(nb)}</p>
       </div>
@@ -129,7 +132,7 @@ function Activite({ s, a, nb }: { s: SessionPourEleve; a: AtelierAffiche; nb: nu
         </div>
       ) : (
         <Link className="bouton bouton-principal" to={`/eleve/session/${s.session.id}`}>
-          {enCours ? t.reprendre : t.commencer}
+          {s.session.mode === 'pilote' ? t.rejoindre : enCours ? t.reprendre : t.commencer}
         </Link>
       )}
     </li>

@@ -1,6 +1,7 @@
 // Espace formateur, chargé à la demande : les élèves (souvent en connexion lente)
 // ne téléchargent ni ces écrans ni les bibliothèques Excel.
 import { Route, Routes } from 'react-router-dom'
+import { AnimationDirect } from './AnimationDirect'
 import { BanqueFiches } from './BanqueFiches'
 import { ConnexionStaff } from './ConnexionStaff'
 import { EditeurFiche } from './EditeurFiche'
@@ -19,6 +20,7 @@ export default function RoutesStaff() {
         <Route path="groupes" element={<MesGroupes />} />
         <Route path="groupe/:groupeId" element={<PilotageGroupe />} />
         <Route path="session/:sessionId" element={<ResultatsSession />} />
+        <Route path="direct/:sessionId" element={<AnimationDirect />} />
         <Route path="fiches" element={<BanqueFiches />} />
         <Route path="fiches/nouvelle" element={<EditeurFiche />} />
         <Route path="fiches/:ficheId" element={<EditeurFiche />} />

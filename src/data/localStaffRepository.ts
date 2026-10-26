@@ -1,7 +1,7 @@
 import { estAdmin, estAdminCamp, ficheVisible, nomComplet, peutModifierFiche, peutProgrammer, peutValider } from '../lib/droits'
 import { nouvelId } from '../lib/ids'
 import { genererCode, normaliser } from '../lib/importEleves'
-import { totaliser } from '../lib/scoring'
+import { tempsPilote, totaliser } from '../lib/scoring'
 import type { AtelierDuCamp, Choix, Eleve, EleveDuCamp, Fiche, GroupePourFormateur, Personnel, Question, Utilisateur } from '../types'
 import type { BaseCamp } from './db'
 import { ErreurDroits, type FicheEditable, type StaffRepository } from './staffRepository'
@@ -175,6 +175,55 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
           await db.tentative.update(t.id, { statut: 'expiree', fin: maintenant(), score: tot.score, score_max: tot.score_max, temps_total_ms: tot.temps_total_ms })
         }
       }
+    },
+
+    async changerModeSession(sessionId, mode, p) {
+      const s = await groupeDeSession(sessionId)
+      await verifierPilotage(s.groupe_id, p)
+      if (await db.tentative.where('session_id').equals(sessionId).count()) {
+        throw new ErreurDroits('Des élèves ont déjà commencé : le mode ne peut plus changer')
+      }
+      await db.session_evaluation.update(sessionId, { mode, etape: 'attente', question_courante_id: undefined, question_lancee_le: undefined })
+    },
+
+    async piloter(sessionId, action, p) {
+      const s = await groupeDeSession(sessionId)
+      await verifierPilotage(s.groupe_id, p)
+      if (s.mode !== 'pilote') throw new ErreurDroits('Cette activité n’est pas en mode piloté')
+      if (s.statut !== 'ouverte' && action !== 'terminer') throw new ErreurDroits('Ouvrez d’abord l’activité')
+      const groupe = await db.groupe.get(s.groupe_id)
+      if (groupe?.statut !== 'en_cours' && action === 'suivante') throw new ErreurDroits('Démarrez d’abord l’atelier')
+
+      const liens = (await db.fiche_question.where('fiche_id').equals(s.fiche_id).toArray()).sort((a, b) => a.ordre - b.ordre)
+      const index = s.question_courante_id ? liens.findIndex((l) => l.question_id === s.question_courante_id) : -1
+
+      if (action === 'suivante' && index + 1 < liens.length) {
+        await db.session_evaluation.update(sessionId, {
+          etape: 'question', question_courante_id: liens[index + 1].question_id, question_lancee_le: maintenant(),
+          ...(index === -1 ? { lancee_par: p.id } : {}),
+        })
+        return
+      }
+      if (action === 'reveler' || action === 'classement') {
+        if (index === -1) throw new ErreurDroits('Lancez d’abord une question')
+        await db.session_evaluation.update(sessionId, { etape: action === 'reveler' ? 'revelation' : 'classement' })
+        return
+      }
+      // terminer (ou « suivante » après la dernière question) : clôture et calcul des scores
+      const questions = (await db.question.bulkGet(liens.map((l) => l.question_id))).filter((q): q is Question => !!q)
+      const enCours = await db.tentative.where('session_id').equals(sessionId).filter((t) => t.statut === 'en_cours').toArray()
+      await db.transaction('rw', [db.tentative, db.session_evaluation, db.reponse], async () => {
+        // questions réellement lancées (la partie peut être terminée avant la fin)
+        const lancees = questions.slice(0, index + 1)
+        for (const t of enCours) {
+          const reponses = await db.reponse.where('tentative_id').equals(t.id).toArray()
+          const tot = totaliser(questions, reponses)
+          await db.tentative.update(t.id, {
+            statut: 'soumise', fin: maintenant(), score: tot.score, score_max: tot.score_max, temps_total_ms: tempsPilote(lancees, reponses),
+          })
+        }
+        await db.session_evaluation.update(sessionId, { etape: 'terminee', statut: 'fermee', fermee_le: maintenant() })
+      })
     },
 
     async changerAffichageClassement(sessionId, affiche, p) {

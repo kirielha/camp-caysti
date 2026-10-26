@@ -54,3 +54,14 @@ export function totaliser(questions: Question[], reponses: Reponse[]) {
   const en_attente = reponses.filter((r) => r.statut_correction === 'en_attente').length
   return { score, score_max, temps_total_ms, en_attente }
 }
+
+/**
+ * Temps total d'une partie pilotée : une question lancée sans réponse compte pour toute sa durée.
+ * Sinon un élève qui ne répond pas (temps 0) passerait devant, à score égal, celui qui a répondu.
+ */
+export function tempsPilote(questionsLancees: Pick<Question, 'id' | 'duree_secondes'>[], reponses: Reponse[]): number {
+  return questionsLancees.reduce((total, q) => {
+    const r = reponses.find((x) => x.question_id === q.id)
+    return total + (r?.temps_ms ?? q.duree_secondes * 1000)
+  }, 0)
+}

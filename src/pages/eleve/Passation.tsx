@@ -6,8 +6,9 @@ import { useCamp } from '../../contexte'
 import { traduire } from '../../i18n/textes'
 import type { QuestionAvecChoix, SessionPourEleve, Tentative } from '../../types'
 import { Chrono } from '../../components/Chrono'
+import { PassationPilotee } from './PassationPilotee'
 
-type Phase = 'chargement' | 'consignes' | 'question' | 'envoi' | 'fermee'
+type Phase = 'chargement' | 'consignes' | 'question' | 'envoi' | 'fermee' | 'pilote'
 
 export function Passation() {
   const { sessionId = '' } = useParams()
@@ -29,6 +30,7 @@ export function Passation() {
     ;(async () => {
       try {
         const { detail, questions } = await repo.chargerSession(sessionId)
+        if (detail.session.mode === 'pilote') { if (actif) setPhase('pilote'); return }
         const { tentative, reponses } = await repo.demarrerTentative(sessionId, eleve.id, langue)
         if (!actif) return
         const repondues = new Set(reponses.map((r) => r.question_id))
@@ -67,6 +69,7 @@ export function Passation() {
   }, [index, questions.length, terminer])
 
   if (phase === 'chargement') return <p className="aide">{t.chargement}</p>
+  if (phase === 'pilote') return <PassationPilotee sessionId={sessionId} />
   if (phase === 'fermee') {
     return (
       <section>
