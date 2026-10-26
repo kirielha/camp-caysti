@@ -110,7 +110,7 @@ async function seed(db: BaseCamp) {
         ['Capteur de lumière', 'Light sensor', true],
         ['Moteur', 'Motor', false],
       ]),
-      q({ type: 'qcm_unique', image: '/demo/led.svg', enonce_fr: 'Quel est ce composant ?', enonce_en: 'What is this component?', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
+      q({ type: 'qcm_unique', image: 'demo/led.svg', enonce_fr: 'Quel est ce composant ?', enonce_en: 'What is this component?', duree_secondes: 25, points: 1, competence_id: ID.compActionneur }, [
         ['Une LED', 'An LED', true],
         ['Une résistance', 'A resistor', false],
         ['Un moteur', 'A motor', false],

@@ -3,10 +3,12 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // mode « apercu » : build sans service worker, chemins relatifs (aperçu hébergé statiquement)
+  base: mode === 'apercu' ? './' : '/',
   plugins: [
     react(),
-    VitePWA({
+    mode !== 'apercu' && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'demo/*.svg'],
       manifest: {
@@ -29,4 +31,4 @@ export default defineConfig({
   test: {
     environment: 'node',
   },
-})
+}))
