@@ -52,6 +52,34 @@ export interface Groupe {
   statut: StatutGroupe
 }
 
+export type Role = 'super_admin' | 'admin_camp' | 'formateur' | 'lecteur'
+
+/** Personnel : admins et formateurs (lié au compte d'authentification). */
+export interface Utilisateur {
+  id: string
+  nom: string
+  prenom: string
+  email: string
+  telephone?: string
+  langue_interface: Langue
+  actif: boolean
+}
+
+export interface AttributionRole {
+  id: string
+  utilisateur_id: string
+  role: Role
+  /** Camp concerné ; absent = tous les camps. */
+  camp_id?: string
+}
+
+export interface GroupeFormateur {
+  id: string
+  groupe_id: string
+  utilisateur_id: string
+  role: 'principal' | 'secondaire'
+}
+
 export interface Eleve {
   id: string
   code_acces: string
@@ -93,6 +121,10 @@ export interface Fiche {
   fiche_jumelle_id?: string
   auteur_id: string
   version: number
+  validee_par?: string
+  validee_le?: string
+  /** Remarque de l'admin quand il refuse la fiche (ce qu'il faut corriger). */
+  commentaire_validation?: string
 }
 
 export interface Question {
@@ -141,6 +173,7 @@ export interface SessionEvaluation {
   question_lancee_le?: string
   ouverte_le?: string
   fermee_le?: string
+  lancee_par?: string
 }
 
 export interface Tentative {
@@ -205,4 +238,42 @@ export interface LigneClassement {
   nom_affiche: string
   score: number
   temps_total_ms: number
+}
+
+// ---------------------------------------------------------------- Espace formateur
+
+/** Utilisateur connecté avec ses rôles. */
+export interface Personnel extends Utilisateur {
+  roles: AttributionRole[]
+}
+
+export interface GroupePourFormateur {
+  groupe: Groupe
+  atelier: Atelier
+  technologie: Technologie
+  camp: Camp
+  /** Rôle du formateur dans ce groupe ; absent quand un admin consulte un groupe qui n'est pas le sien. */
+  role?: 'principal' | 'secondaire'
+  nb_eleves: number
+}
+
+export interface ActiviteDuGroupe {
+  session: SessionEvaluation
+  fiche: Fiche
+  nb_questions: number
+  nb_soumises: number
+  nb_en_cours: number
+}
+
+export interface DetailGroupe extends GroupePourFormateur {
+  formateurs: { utilisateur: Utilisateur; role: 'principal' | 'secondaire' }[]
+  eleves: Eleve[]
+  activites: ActiviteDuGroupe[]
+}
+
+export interface LigneResultat {
+  eleve: Eleve
+  tentative?: Tentative
+  /** Réponses écrites encore à corriger. */
+  en_attente: number
 }

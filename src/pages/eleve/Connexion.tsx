@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { db, repo } from '../../data'
 import { normaliserCode } from '../../data/localRepository'
 import { CODES_DEMO, reinitialiserDemo } from '../../data/seed'
@@ -50,6 +50,8 @@ export function Connexion() {
         {erreur && <p id="erreur-code" className="erreur" role="alert">{erreur}</p>}
         <button className="bouton bouton-principal bouton-large" disabled={envoi}>{t.connexionBouton}</button>
       </form>
+
+      <p className="lien-staff"><Link className="lien lien-discret" to="/formateur">Espace formateur</Link></p>
 
       {modeLocal && (
         <aside className="demo">

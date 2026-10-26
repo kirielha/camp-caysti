@@ -4,8 +4,8 @@
 
 import Dexie, { type Table } from 'dexie'
 import type {
-  Atelier, Camp, Choix, Competence, Eleve, Fiche, FicheQuestion, Groupe,
-  Inscription, Question, Reponse, SessionEvaluation, Technologie, Tentative,
+  Atelier, AttributionRole, Camp, Choix, Competence, Eleve, Fiche, FicheQuestion, Groupe, GroupeFormateur,
+  Inscription, Question, Reponse, SessionEvaluation, Technologie, Tentative, Utilisateur,
 } from '../types'
 
 export class BaseCamp extends Dexie {
@@ -23,6 +23,9 @@ export class BaseCamp extends Dexie {
   session_evaluation!: Table<SessionEvaluation, string>
   tentative!: Table<Tentative, string>
   reponse!: Table<Reponse, string>
+  utilisateur!: Table<Utilisateur, string>
+  attribution_role!: Table<AttributionRole, string>
+  groupe_formateur!: Table<GroupeFormateur, string>
 
   constructor(nom = 'camp-caysti') {
     super(nom)
@@ -42,6 +45,13 @@ export class BaseCamp extends Dexie {
       session_evaluation: 'id, groupe_id, fiche_id, statut',
       tentative: 'id, session_id, eleve_id, [session_id+eleve_id]',
       reponse: 'id, tentative_id, [tentative_id+question_id]',
+    })
+    // v2 : personnel (admins, formateurs) et affectation des formateurs aux groupes
+    this.version(2).stores({
+      utilisateur: 'id, &email',
+      attribution_role: 'id, utilisateur_id, camp_id',
+      groupe_formateur: 'id, groupe_id, utilisateur_id',
+      fiche: 'id, type, technologie_id, auteur_id, statut_validation',
     })
   }
 }

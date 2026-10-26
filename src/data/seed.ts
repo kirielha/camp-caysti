@@ -4,7 +4,7 @@
 // Codes élèves pour essayer : AMA234, YAW567, KEM789
 
 import type {
-  Choix, Eleve, Fiche, FicheQuestion, Question, Reponse, SessionEvaluation, Tentative,
+  AttributionRole, Choix, Eleve, Fiche, FicheQuestion, GroupeFormateur, Question, Reponse, SessionEvaluation, Tentative, Utilisateur,
 } from '../types'
 import type { BaseCamp } from './db'
 
@@ -18,7 +18,8 @@ const ID = {
   ville: u(1), camp: u(2),
   robotique: u(10), ia: u(11), iot: u(12), prog: u(13), impression3d: u(14),
   atelierRobot: u(20), groupeA: u(21), atelier3d: u(22), groupeB: u(23),
-  formateur: u(30),
+  formateur: u(30), formatrice3d: u(31), superAdmin: u(32), adminCamp: u(33),
+  ficheSecurite: u(107),
   compCapteur: u(40), compActionneur: u(41), compRobot: u(42),
   compFabrication: u(43), compMateriau: u(44), compChaine: u(45), compProjet: u(46),
   fichePreRobot: u(100), ficheQuizRobot: u(101), fichePostRobot: u(102),
@@ -29,7 +30,7 @@ const ID = {
 export const CODES_DEMO = ['AMA234', 'YAW567', 'KEM789']
 
 /** À incrémenter à chaque changement des données de démo : les navigateurs les rechargent alors. */
-const VERSION_DEMO = '4'
+const VERSION_DEMO = '5'
 const CLE_VERSION = 'camp-caysti:version-demo'
 
 export async function seedSiVide(db: BaseCamp) {
@@ -213,6 +214,20 @@ async function seed(db: BaseCamp) {
     q({ type: 'qro_qualitative', enonce_fr: 'Qu’est-ce que tu as préféré ?', enonce_en: 'What did you like best?', duree_secondes: 90, points: 0 }),
   ]
 
+  // Fiche soumise par la formatrice 3D, en attente de validation par un admin
+  const securite = [
+    q({ type: 'qcm_unique', image: img('imprimante3d'), enonce_fr: 'Pendant une impression, la buse de l’imprimante est…', enonce_en: 'During a print, the printer nozzle is…', duree_secondes: 20, points: 1, competence_id: ID.compFabrication }, [
+      ['très chaude : on ne la touche pas', 'very hot: do not touch it', true],
+      ['froide', 'cold', false],
+      ['tiède', 'lukewarm', false],
+    ]),
+    q({ type: 'qcm_multiple', enonce_fr: 'Coche les bons réflexes au fab lab.', enonce_en: 'Tick the right habits in the fab lab.', duree_secondes: 30, points: 2, competence_id: ID.compChaine }, [
+      ['Attendre que la pièce refroidisse avant de la retirer', 'Wait for the part to cool before removing it', true],
+      ['Prévenir le formateur si l’impression se décolle', 'Tell the trainer if the print comes loose', true],
+      ['Mettre les doigts sous la buse pour vérifier', 'Put your fingers under the nozzle to check', false],
+    ]),
+  ]
+  relier(ID.ficheSecurite, securite)
   relier(ID.fichePreRobot, preRobot)
   relier(ID.ficheQuizRobot, quizRobot)
   relier(ID.fichePostRobot, postRobot)
@@ -223,7 +238,9 @@ async function seed(db: BaseCamp) {
 
   const fiche = (id: string, type: Fiche['type'], technologie_id: string | undefined, fr: string, en: string, jumelle?: string): Fiche => ({
     id, type, titre_fr: fr, titre_en: en, technologie_id, mode_correction: 'ia_definitive',
-    visibilite: 'officielle', statut_validation: 'validee', auteur_id: auteur, version: 1, fiche_jumelle_id: jumelle,
+    visibilite: 'officielle', statut_validation: 'validee', version: 1, fiche_jumelle_id: jumelle,
+    auteur_id: technologie_id === ID.impression3d ? ID.formatrice3d : auteur,
+    validee_par: ID.superAdmin, validee_le: '2026-11-25T10:00:00Z',
   })
   const fiches = [
     fiche(ID.fichePreRobot, 'pretest', ID.robotique, 'Prétest — Mon premier robot', 'Pre-test — My first robot'),
@@ -233,6 +250,29 @@ async function seed(db: BaseCamp) {
     fiche(ID.ficheQuiz3d, 'quiz', ID.impression3d, 'Quiz express : la chaîne d’impression', 'Quick quiz: the printing chain'),
     fiche(ID.fichePost3d, 'posttest', ID.impression3d, 'Post-test — Imprimer en 3D', 'Post-test — 3D printing', ID.fichePre3d),
     fiche(ID.ficheAvis, 'satisfaction', undefined, 'Ton avis sur l’atelier', 'Your opinion on the workshop'),
+    {
+      ...fiche(ID.ficheSecurite, 'quiz', ID.impression3d, 'Quiz : la sécurité au fab lab', 'Quiz: safety in the fab lab'),
+      visibilite: 'privee' as const, statut_validation: 'soumise' as const, validee_par: undefined, validee_le: undefined,
+    },
+  ]
+
+  // Personnel
+  const personnel: Utilisateur[] = [
+    { id: ID.superAdmin, prenom: 'Arielle', nom: 'Kitio', email: 'direction@caysti.demo', langue_interface: 'fr', actif: true },
+    { id: ID.adminCamp, prenom: 'Edem', nom: 'Amouzou', email: 'camp.lome@caysti.demo', langue_interface: 'fr', actif: true },
+    { id: ID.formateur, prenom: 'Komla', nom: 'Agbeko', email: 'komla@caysti.demo', langue_interface: 'fr', actif: true },
+    { id: ID.formatrice3d, prenom: 'Akossiwa', nom: 'Dzifa', email: 'akossiwa@caysti.demo', langue_interface: 'fr', actif: true },
+  ]
+  const roles: AttributionRole[] = [
+    { id: u(60), utilisateur_id: ID.superAdmin, role: 'super_admin' },
+    { id: u(61), utilisateur_id: ID.adminCamp, role: 'admin_camp', camp_id: ID.camp },
+    { id: u(62), utilisateur_id: ID.formateur, role: 'formateur', camp_id: ID.camp },
+    { id: u(63), utilisateur_id: ID.formatrice3d, role: 'formateur', camp_id: ID.camp },
+  ]
+  const affectations: GroupeFormateur[] = [
+    { id: u(64), groupe_id: ID.groupeA, utilisateur_id: ID.formateur, role: 'principal' },
+    { id: u(65), groupe_id: ID.groupeA, utilisateur_id: ID.formatrice3d, role: 'secondaire' },
+    { id: u(66), groupe_id: ID.groupeB, utilisateur_id: ID.formatrice3d, role: 'principal' },
   ]
 
   // Sessions : chaque fiche ouverte pour le groupe de son atelier
@@ -337,6 +377,9 @@ async function seed(db: BaseCamp) {
         { id: u(2001 + i * 2), eleve_id: e.id, groupe_id: ID.groupeB, inscrit_le: '2026-11-20T10:00:00Z' },
       ]),
     )
+    await db.utilisateur.bulkAdd(personnel)
+    await db.attribution_role.bulkAdd(roles)
+    await db.groupe_formateur.bulkAdd(affectations)
     await db.tentative.bulkAdd(tentatives)
     await db.reponse.bulkAdd(reponses)
   })

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { FournisseurContexte } from './contexte'
-import { db } from './data'
+import { db, staff } from './data'
 import { reinitialiserDemo } from './data/seed'
 
 beforeEach(async () => {
@@ -158,7 +158,12 @@ describe('parcours élève complet dans l’interface', () => {
     let post = within(robot2).getByRole('heading', { name: /Post-test/ }).closest('li')!
     expect(within(post).getByText('Pas encore ouvert')).toBeTruthy()
     expect((within(post).getByRole('button', { name: 'Commencer' }) as HTMLButtonElement).disabled).toBe(true)
-    await u.click(within(robot2).getByRole('button', { name: 'Ouvrir « Post-test »' }))
+    // le formateur ouvre le post-test depuis son espace ; l'accueil de l'élève se met à jour
+    const komla = (await staff.comptesDemo()).find((p) => p.prenom === 'Komla')!
+    const postSession = (await staff.detailGroupe((await staff.groupesPour(komla))[0].groupe.id, komla)).activites.find((x) => x.fiche.type === 'posttest')!
+    await staff.changerStatutSession(postSession.session.id, 'ouverte', komla)
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+    await act(async () => { document.dispatchEvent(new Event('visibilitychange')) })
     const lignePost = () => within(screen.getByRole('heading', { name: 'Mon premier robot' }).closest('article')!).getByRole('heading', { name: /Post-test/ }).closest('li')!
     await waitFor(() => expect(within(lignePost()).queryByText('Pas encore ouvert')).toBeNull())
     post = lignePost()

@@ -1,5 +1,6 @@
 import { BaseCamp } from './db'
 import { creerRepositoryLocal } from './localRepository'
+import { creerStaffRepositoryLocal } from './localStaffRepository'
 import type { Repository } from './repository'
 import { seedSiVide } from './seed'
 
@@ -16,6 +17,9 @@ function creerRepository(): Repository {
 }
 
 export const repo = creerRepository()
+
+/** Accès aux données de l'espace personnel (formateurs, admins). */
+export const staff = creerStaffRepositoryLocal(db)
 
 /** Prépare les données au démarrage (démo en mode local). */
 export async function initialiserDonnees() {

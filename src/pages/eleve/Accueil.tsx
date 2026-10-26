@@ -5,8 +5,6 @@ import { useCamp } from '../../contexte'
 import { traduire } from '../../i18n/textes'
 import type { AtelierPourEleve, SessionPourEleve } from '../../types'
 
-const modeDemo = (import.meta.env.VITE_DATA_BACKEND ?? 'local') === 'local'
-
 type AtelierAffiche = AtelierPourEleve & { nbQuestions: Record<string, number> }
 
 export function Accueil() {
@@ -47,7 +45,7 @@ export function Accueil() {
       {ateliers?.length === 0 && <p className="vide">{t.aucunAtelier}</p>}
 
       <div className="ateliers">
-        {ateliers?.map((a) => <BlocAtelier key={a.groupe.id} a={a} onChange={charger} />)}
+        {ateliers?.map((a) => <BlocAtelier key={a.groupe.id} a={a} />)}
       </div>
 
       <button type="button" className="lien lien-discret" onClick={() => { deconnecter(); naviguer('/') }}>
@@ -57,7 +55,7 @@ export function Accueil() {
   )
 }
 
-function BlocAtelier({ a, onChange }: { a: AtelierAffiche; onChange: () => void }) {
+function BlocAtelier({ a }: { a: AtelierAffiche }) {
   const { langue, t } = useCamp()
   const statut = a.groupe.statut
 
@@ -86,8 +84,6 @@ function BlocAtelier({ a, onChange }: { a: AtelierAffiche; onChange: () => void 
           {a.activites.map((s) => <Activite key={s.session.id} s={s} a={a} nb={a.nbQuestions[s.session.id] ?? 0} />)}
         </ul>
       )}
-
-      {modeDemo && <ActionsDemo a={a} onChange={onChange} />}
     </article>
   )
 }
@@ -158,38 +154,5 @@ function Progression({ atelier }: { atelier: AtelierPourEleve }) {
       <span>{t.typeFiche.posttest} {t.scoreSur(post.score ?? 0, post.score_max ?? 0)}</span>
       <strong className={ecart > 0 ? 'progression-hausse' : undefined}>{t.ecart(ecart)}</strong>
     </p>
-  )
-}
-
-/**
- * Démo uniquement : simule ce que fera le formateur depuis son espace
- * (démarrer l'atelier, ouvrir une activité, terminer l'atelier).
- */
-function ActionsDemo({ a, onChange }: { a: AtelierAffiche; onChange: () => void }) {
-  const { t } = useCamp()
-  const fermees = a.activites.filter((s) => s.session.statut === 'brouillon')
-  const agir = async (action: () => Promise<void>) => { await action(); onChange() }
-
-  return (
-    <div className="demo-formateur">
-      <p>{t.demoTitre}</p>
-      <div className="demo-formateur-boutons">
-        {a.groupe.statut !== 'en_cours' && (
-          <button type="button" className="puce" onClick={() => agir(() => repo.changerStatutGroupe(a.groupe.id, 'en_cours'))}>
-            {t.demoDemarrer}
-          </button>
-        )}
-        {a.groupe.statut === 'en_cours' && fermees.map((s) => (
-          <button key={s.session.id} type="button" className="puce" onClick={() => agir(() => repo.changerStatutSession(s.session.id, 'ouverte'))}>
-            {t.demoOuvrir(t.typeFiche[s.fiche.type])}
-          </button>
-        ))}
-        {a.groupe.statut === 'en_cours' && (
-          <button type="button" className="puce" onClick={() => agir(() => repo.changerStatutGroupe(a.groupe.id, 'termine'))}>
-            {t.demoTerminer}
-          </button>
-        )}
-      </div>
-    </div>
   )
 }
