@@ -2,13 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { staff } from '../data'
 import { estAdmin } from '../lib/droits'
-import type { GroupePourFormateur, StatutGroupe } from '../types'
+import type { GroupePourFormateur } from '../types'
 import { useStaff } from './contexteStaff'
-
-export const libelleStatutGroupe: Record<StatutGroupe, string> = { a_venir: 'À venir', en_cours: 'En cours', termine: 'Terminé' }
-
-export const jourCourt = (iso: string) =>
-  new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+import { jourCourt, libelleStatutGroupe } from './libelles'
 
 export function MesGroupes() {
   const { moi } = useStaff()

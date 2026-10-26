@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { repo, staff } from '../data'
 import type { LigneClassement, LigneResultat, SessionPourEleve } from '../types'
-import { libelleType } from './PilotageGroupe'
+import { libelleType } from './libelles'
 
 const duree = (ms?: number) => {
   if (ms === undefined) return '—'

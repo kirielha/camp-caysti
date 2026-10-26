@@ -6,11 +6,14 @@ import { Accueil } from './pages/eleve/Accueil'
 import { Connexion } from './pages/eleve/Connexion'
 import { Passation } from './pages/eleve/Passation'
 import { Resultat } from './pages/eleve/Resultat'
+import { BanqueFiches } from './staff/BanqueFiches'
 import { ConnexionStaff } from './staff/ConnexionStaff'
+import { EditeurFiche } from './staff/EditeurFiche'
 import { MesGroupes } from './staff/MesGroupes'
 import { PilotageGroupe } from './staff/PilotageGroupe'
 import { ResultatsSession } from './staff/ResultatsSession'
 import { EspaceStaff } from './staff/StaffLayout'
+import { ValidationFiches } from './staff/ValidationFiches'
 
 function Protege({ children }: { children: ReactNode }) {
   const { eleve } = useCamp()
@@ -38,6 +41,10 @@ export default function App() {
             <Route path="groupes" element={<MesGroupes />} />
             <Route path="groupe/:groupeId" element={<PilotageGroupe />} />
             <Route path="session/:sessionId" element={<ResultatsSession />} />
+            <Route path="fiches" element={<BanqueFiches />} />
+            <Route path="fiches/nouvelle" element={<EditeurFiche />} />
+            <Route path="fiches/:ficheId" element={<EditeurFiche />} />
+            <Route path="validation" element={<ValidationFiches />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

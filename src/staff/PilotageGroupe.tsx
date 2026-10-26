@@ -3,11 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 import { staff } from '../data'
 import { ErreurDroits, type ResumeFiche } from '../data/staffRepository'
 import { nomComplet, peutProgrammer } from '../lib/droits'
-import type { ActiviteDuGroupe, DetailGroupe, StatutSession, TypeFiche } from '../types'
+import type { ActiviteDuGroupe, DetailGroupe, StatutSession } from '../types'
 import { useStaff } from './contexteStaff'
-import { jourCourt, libelleStatutGroupe } from './MesGroupes'
+import { jourCourt, libelleStatutGroupe, libelleType } from './libelles'
 
-export const libelleType: Record<TypeFiche, string> = { pretest: 'Prétest', posttest: 'Post-test', quiz: 'Quiz', satisfaction: 'Avis' }
 const libelleStatutSession: Record<StatutSession, string> = { brouillon: 'Pas encore ouverte', ouverte: 'Ouverte', fermee: 'Fermée' }
 
 export function PilotageGroupe() {
