@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { repo, staff } from '../data'
+import { staff } from '../data'
 import type { LigneClassement, LigneResultat, SessionPourEleve } from '../types'
 import { libelleType } from './libelles'
 
@@ -19,7 +19,7 @@ export function ResultatsSession() {
   const [projection, setProjection] = useState(false)
 
   const charger = useCallback(async () => {
-    const [d, l, c] = await Promise.all([repo.chargerSession(sessionId), staff.resultatsSession(sessionId), repo.classement(sessionId, 10)])
+    const [d, l, c] = await Promise.all([staff.vueSession(sessionId), staff.resultatsSession(sessionId), staff.classement(sessionId, 10)])
     setDetail(d.detail); setLignes(l); setTop(c)
   }, [sessionId])
 

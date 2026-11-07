@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { repo } from './data'
+import { backend, repo } from './data'
 import { textes, type Textes } from './i18n/textes'
 import type { Eleve, Langue } from './types'
 
@@ -55,6 +55,8 @@ export function FournisseurContexte({ children }: { children: ReactNode }) {
   const deconnecter = useCallback(() => {
     setEleve(undefined)
     try { sessionStorage.removeItem(CLE) } catch { /* stockage indisponible */ }
+    // avec le serveur, la session de la tablette est fermée : l'élève suivant repart de zéro
+    if (backend === 'supabase') void import('./data/supabase/client').then((m) => m.deconnecterEleve())
   }, [])
 
   const changerLangue = useCallback((l: Langue) => {

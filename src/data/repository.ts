@@ -8,7 +8,10 @@ import type {
 } from '../types'
 
 export type CodeErreur = 'code_inconnu' | 'deja_soumise' | 'session_fermee' | 'non_inscrit' | 'atelier_inactif'
-  | 'hors_question' | 'deja_repondu' | 'pas_pilote' | 'session_pilotee'
+  | 'hors_question' | 'deja_repondu' | 'pas_pilote' | 'session_pilotee' | 'trop_essais' | 'reseau'
+
+export const CODES_ERREUR: CodeErreur[] = ['code_inconnu', 'deja_soumise', 'session_fermee', 'non_inscrit', 'atelier_inactif',
+  'hors_question', 'deja_repondu', 'pas_pilote', 'session_pilotee', 'trop_essais', 'reseau']
 
 export class ErreurMetier extends Error {
   code: CodeErreur

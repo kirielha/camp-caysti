@@ -3,23 +3,20 @@ import { creerRepositoryLocal } from './localRepository'
 import { creerStaffRepositoryLocal } from './localStaffRepository'
 import type { Repository } from './repository'
 import { seedSiVide } from './seed'
+import type { StaffRepository } from './staffRepository'
+import { creerRepositorySupabase } from './supabase/supabaseRepository'
+import { creerStaffRepositorySupabase } from './supabase/supabaseStaffRepository'
 
-const backend = import.meta.env.VITE_DATA_BACKEND ?? 'local'
+/** « local » : démo dans le navigateur ; « supabase » : données partagées sur le serveur. */
+export const backend: 'local' | 'supabase' = import.meta.env.VITE_DATA_BACKEND === 'supabase' ? 'supabase' : 'local'
+export const modeDemo = backend === 'local'
 
 export const db = new BaseCamp()
 
-function creerRepository(): Repository {
-  if (backend === 'supabase') {
-    // Implémentation à brancher une fois le projet Supabase créé.
-    throw new Error('Backend Supabase pas encore branché : utiliser VITE_DATA_BACKEND=local')
-  }
-  return creerRepositoryLocal(db)
-}
-
-export const repo = creerRepository()
+export const repo: Repository = backend === 'supabase' ? creerRepositorySupabase() : creerRepositoryLocal(db)
 
 /** Accès aux données de l'espace personnel (formateurs, admins). */
-export const staff = creerStaffRepositoryLocal(db)
+export const staff: StaffRepository = backend === 'supabase' ? creerStaffRepositorySupabase() : creerStaffRepositoryLocal(db)
 
 /** Prépare les données au démarrage (démo en mode local). */
 export async function initialiserDonnees() {

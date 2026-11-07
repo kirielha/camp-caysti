@@ -3,9 +3,12 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Sous-dossier de publication : « /camp-caysti/ » sur GitHub Pages (fourni par le workflow), « / » sinon
+const base = process.env.VITE_BASE ?? '/'
+
 export default defineConfig(({ mode }) => ({
   // mode « apercu » : build sans service worker, chemins relatifs (aperçu hébergé statiquement)
-  base: mode === 'apercu' ? './' : '/',
+  base: mode === 'apercu' ? './' : base,
   plugins: [
     react(),
     mode !== 'apercu' && VitePWA({
@@ -24,7 +27,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // l'application entière est mise en cache : elle s'ouvre sans réseau
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        navigateFallback: '/index.html',
+        navigateFallback: `${base}index.html`,
       },
     }),
   ],

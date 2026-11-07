@@ -6,6 +6,7 @@ import { BanqueFiches } from './BanqueFiches'
 import { ConnexionStaff } from './ConnexionStaff'
 import { EditeurFiche } from './EditeurFiche'
 import { GestionCamp } from './GestionCamp'
+import { GestionPersonnel } from './GestionPersonnel'
 import { MesGroupes } from './MesGroupes'
 import { PilotageGroupe } from './PilotageGroupe'
 import { ResultatsSession } from './ResultatsSession'
@@ -26,6 +27,7 @@ export default function RoutesStaff() {
         <Route path="fiches/:ficheId" element={<EditeurFiche />} />
         <Route path="validation" element={<ValidationFiches />} />
         <Route path="camp" element={<GestionCamp />} />
+        <Route path="personnel" element={<GestionPersonnel />} />
       </Route>
     </Routes>
   )

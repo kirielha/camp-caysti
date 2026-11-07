@@ -357,7 +357,7 @@ async function seed(db: BaseCamp) {
     ])
     await db.camp.add({
       id: ID.camp, ville_id: ID.ville, nom: 'Camp CAYSTI Lomé (démo)', date_debut: '2026-12-01', date_fin: '2026-12-05',
-      lieu: 'Lomé', statut: 'en_cours',
+      lieu: 'Lomé', statut: 'en_cours', ville: 'Lomé', pays: 'Togo', pays_code: 'TG',
     })
     await db.atelier.bulkAdd([
       { id: ID.atelierRobot, camp_id: ID.camp, technologie_id: ID.robotique, titre_fr: 'Mon premier robot', titre_en: 'My first robot', image: img('robot') },

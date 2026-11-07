@@ -22,6 +22,10 @@ export interface Camp {
   date_fin: string
   lieu?: string
   statut: 'preparation' | 'en_cours' | 'termine'
+  /** Fournis par le serveur pour l'affichage */
+  ville?: string
+  pays?: string
+  pays_code?: string
 }
 
 export interface Technologie {
@@ -267,6 +271,8 @@ export interface SessionPourEleve {
   groupe: Groupe
   technologie: Technologie
   tentative?: Tentative
+  /** Nombre de questions de la fiche (fourni par le serveur pour éviter un aller-retour par activité). */
+  nb_questions?: number
 }
 
 /** Un atelier de l'élève (via son groupe), avec ses activités ouvertes dans l'ordre du déroulé. */
@@ -355,4 +361,6 @@ export interface EtatPilote {
   participants: { eleve: Eleve; arrive_le: string }[]
   /** Réponses déjà reçues pour la question courante. */
   reponsesQuestion: Reponse[]
+  /** Écart entre l'horloge du serveur et celle de l'appareil (ms), pour un chrono identique sur toutes les tablettes. */
+  decalage_ms?: number
 }

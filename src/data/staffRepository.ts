@@ -4,7 +4,8 @@
 import type { LigneImport } from '../lib/importEleves'
 import type {
   Atelier, AtelierDuCamp, Camp, Choix, Competence, DetailGroupe, Ecole, Eleve, EleveDuCamp, Fiche, Groupe,
-  GroupePourFormateur, LangueParlee, LigneResultat, ModeSession, Personnel, Question, StatutGroupe, StatutSession, Technologie, Tuteur, Utilisateur,
+  EtatPilote, GroupePourFormateur, LangueParlee, LigneClassement, LigneResultat, ModeSession, Personnel, Question, QuestionAvecChoix, Role,
+  SessionPourEleve, StatutGroupe, StatutSession, Technologie, Tuteur, Utilisateur,
 } from '../types'
 
 /** Question telle qu'éditée dans l'éditeur de fiches (avec ses choix). */
@@ -27,6 +28,18 @@ export interface ResumeFiche {
   nb_sessions: number
 }
 
+export interface SaisieCamp {
+  id?: string
+  nom: string
+  pays_code: string
+  pays_nom: string
+  ville: string
+  date_debut: string
+  date_fin: string
+  lieu?: string
+  statut?: Camp['statut']
+}
+
 export type ActionPilote = 'suivante' | 'reveler' | 'classement' | 'terminer'
 
 export class ErreurDroits extends Error {
@@ -45,6 +58,12 @@ export interface StaffRepository {
   /** Groupes du formateur ; pour un admin, tous les groupes de sa portée. */
   groupesPour(personnel: Personnel): Promise<GroupePourFormateur[]>
   detailGroupe(groupeId: string, personnel: Personnel): Promise<DetailGroupe>
+  /** Session vue par le formateur : fiche et questions avec les bonnes réponses. */
+  vueSession(sessionId: string): Promise<{ detail: SessionPourEleve; questions: QuestionAvecChoix[] }>
+  etatPilote(sessionId: string): Promise<EtatPilote>
+  classement(sessionId: string, limite?: number): Promise<LigneClassement[]>
+  classementEnDirect(sessionId: string, limite?: number): Promise<LigneClassement[]>
+  surveillerSession(sessionId: string, auChangement: () => void): () => void
   /** Élèves inscrits au groupe avec leur tentative pour cette session. */
   resultatsSession(sessionId: string): Promise<LigneResultat[]>
   changerStatutGroupe(groupeId: string, statut: StatutGroupe, personnel: Personnel): Promise<void>
@@ -92,6 +111,13 @@ export interface StaffRepository {
   langues(): Promise<LangueParlee[]>
   /** Élèves déjà connus (tous camps), pour reconnaître ceux qui reviennent lors d'un import. */
   identitesEleves(): Promise<Pick<Eleve, 'id' | 'nom' | 'prenom' | 'date_naissance'>[]>
+
+  // ---------- Personnel (admins) ----------
+  listePersonnel(personnel: Personnel): Promise<Personnel[]>
+  attribuerRole(utilisateurId: string, role: Role, campId: string | undefined, personnel: Personnel): Promise<void>
+  retirerRole(roleId: string, personnel: Personnel): Promise<void>
+  /** Crée ou modifie un camp (super-admin). Renvoie son id. */
+  enregistrerCamp(camp: SaisieCamp, personnel: Personnel): Promise<string>
 
   // ---------- Référentiels ----------
   technologies(): Promise<Technologie[]>

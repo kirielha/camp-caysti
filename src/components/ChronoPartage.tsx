@@ -5,13 +5,16 @@ import { useEffect, useRef, useState } from 'react'
  * le formateur a lancé la question, si bien que tous les écrans affichent le même décompte,
  * même pour un élève qui recharge la page en cours de question.
  */
-export function ChronoPartage({ lanceeLe, duree, onFin, libelle }: {
+export function ChronoPartage({ lanceeLe, duree, onFin, libelle, decalage = 0 }: {
   lanceeLe: string
   duree: number
   onFin?: () => void
   libelle: (secondes: number) => string
+  /** Écart entre l'horloge du serveur et celle de l'appareil : une tablette mal réglée affiche quand même le bon temps. */
+  decalage?: number
 }) {
-  const fin = Date.parse(lanceeLe) + duree * 1000
+  // échéance exprimée dans l'horloge de l'appareil
+  const fin = Date.parse(lanceeLe) + duree * 1000 - decalage
   const [reste, setReste] = useState(() => Math.max(0, fin - Date.now()))
   const prevenu = useRef(false)
   const onFinRef = useRef(onFin)

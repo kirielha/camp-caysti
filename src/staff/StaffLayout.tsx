@@ -24,16 +24,18 @@ function Cadre() {
   }, [moi, location.pathname])
 
   if (!pret) return <p className="aide">Chargement…</p>
-  if (!moi && location.pathname !== '/formateur') return <Navigate to="/formateur" replace />
+  const actif = !!moi && moi.roles.length > 0
+  if (!actif && location.pathname !== '/formateur') return <Navigate to="/formateur" replace />
 
   return (
     <div className="staff">
-      {moi && (
+      {actif && moi && (
         <nav className="staff-nav" aria-label="Espace formateur">
           <div className="staff-nav-liens">
             <NavLink to="/formateur/groupes">Mes groupes</NavLink>
             <NavLink to="/formateur/fiches">Fiches</NavLink>
             {estAdmin(moi) && <NavLink to="/formateur/camp">Camp et élèves</NavLink>}
+            {estAdmin(moi) && <NavLink to="/formateur/personnel">Personnel</NavLink>}
             {estAdmin(moi) && (
               <NavLink to="/formateur/validation">
                 À valider{aValider > 0 && <span className="pastille" aria-label={`${aValider} en attente`}>{aValider}</span>}
@@ -42,7 +44,7 @@ function Cadre() {
           </div>
           <div className="staff-nav-moi">
             <span>{nomComplet(moi)}</span>
-            <button type="button" className="lien" onClick={() => { deconnecter(); naviguer('/formateur') }}>Se déconnecter</button>
+            <button type="button" className="lien" onClick={() => { void deconnecter().then(() => naviguer('/formateur')) }}>Se déconnecter</button>
           </div>
         </nav>
       )}

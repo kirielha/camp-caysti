@@ -1,0 +1,53 @@
+# Publie l'application sur GitHub Pages à chaque push sur main.
+# Réglages à faire une fois dans le dépôt GitHub :
+#   Settings > Pages > Source : « GitHub Actions »
+#   Settings > Secrets and variables > Actions > onglet Variables :
+#     VITE_SUPABASE_URL       (Project URL de Supabase)
+#     VITE_SUPABASE_ANON_KEY  (clé anon / publishable : publique par nature)
+# Ne jamais mettre ici la clé service_role ni le mot de passe de la base.
+name: Publication GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_DATA_BACKEND: ${{ vars.VITE_SUPABASE_URL != '' && 'supabase' || 'local' }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

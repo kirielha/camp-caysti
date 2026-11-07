@@ -4,11 +4,15 @@ import { genererCode, normaliser } from '../lib/importEleves'
 import { tempsPilote, totaliser } from '../lib/scoring'
 import type { AtelierDuCamp, Choix, Eleve, EleveDuCamp, Fiche, GroupePourFormateur, Personnel, Question, Utilisateur } from '../types'
 import type { BaseCamp } from './db'
+import { creerRepositoryLocal } from './localRepository'
 import { ErreurDroits, type FicheEditable, type StaffRepository } from './staffRepository'
 
 const maintenant = () => new Date().toISOString()
 
 export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
+  // les vues de session du formateur reprennent celles de l'espace élève (même base locale)
+  const eleves = creerRepositoryLocal(db)
+
   async function personnel(id: string): Promise<Personnel | undefined> {
     const u = await db.utilisateur.get(id)
     if (!u) return undefined
@@ -69,6 +73,12 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
     },
 
     personnel,
+
+    vueSession: (sessionId) => eleves.chargerSession(sessionId),
+    etatPilote: (sessionId) => eleves.etatPilote(sessionId),
+    classement: (sessionId, limite) => eleves.classement(sessionId, limite),
+    classementEnDirect: (sessionId, limite) => eleves.classementEnDirect(sessionId, limite),
+    surveillerSession: (sessionId, f) => eleves.surveillerSession(sessionId, f),
 
     // ---------------------------------------------------------------- Pilotage
     async groupesPour(p) {
@@ -548,6 +558,52 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
     },
     async identitesEleves() {
       return (await db.eleve.toArray()).map(({ id, nom, prenom, date_naissance }) => ({ id, nom, prenom, date_naissance }))
+    },
+
+    // ---------------------------------------------------------------- Personnel
+    async listePersonnel(p) {
+      if (!estAdmin(p)) throw new ErreurDroits('Réservé aux admins')
+      const tous = await db.utilisateur.toArray()
+      return (await Promise.all(tous.map((u) => personnel(u.id)))).filter((x): x is Personnel => !!x)
+        .sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom))
+    },
+
+    async attribuerRole(utilisateurId, role, campId, p) {
+      const superAdmin = p.roles.some((r) => r.role === 'super_admin')
+      if (!(superAdmin || ((role === 'formateur' || role === 'lecteur') && campId && estAdminCamp(p, campId)))) {
+        throw new ErreurDroits('Vous ne pouvez pas attribuer ce rôle')
+      }
+      if (role === 'super_admin' && campId) throw new ErreurDroits('Un super-admin couvre tous les camps')
+      const existe = await db.attribution_role.where('utilisateur_id').equals(utilisateurId)
+        .filter((r) => r.role === role && (r.camp_id ?? null) === (campId ?? null)).count()
+      if (!existe) await db.attribution_role.add({ id: nouvelId(), utilisateur_id: utilisateurId, role, camp_id: campId })
+    },
+
+    async retirerRole(roleId, p) {
+      const r = await db.attribution_role.get(roleId)
+      if (!r) return
+      const superAdmin = p.roles.some((x) => x.role === 'super_admin')
+      if (!(superAdmin || ((r.role === 'formateur' || r.role === 'lecteur') && r.camp_id && estAdminCamp(p, r.camp_id)))) {
+        throw new ErreurDroits('Vous ne pouvez pas retirer ce rôle')
+      }
+      if (r.utilisateur_id === p.id && r.role === 'super_admin') throw new ErreurDroits('Vous ne pouvez pas retirer votre propre rôle de super-admin')
+      await db.attribution_role.delete(roleId)
+    },
+
+    async enregistrerCamp(saisie, p) {
+      const existe = saisie.id ? await db.camp.get(saisie.id) : undefined
+      if (!(p.roles.some((r) => r.role === 'super_admin') || (existe && estAdminCamp(p, existe.id)))) {
+        throw new ErreurDroits('Seul un super-admin crée un camp')
+      }
+      if (!saisie.nom.trim() || !saisie.ville.trim() || !saisie.pays_code) throw new ErreurDroits('Indiquez le nom du camp, le pays et la ville')
+      if (saisie.date_fin < saisie.date_debut) throw new ErreurDroits('La date de fin doit suivre la date de début')
+      const id = saisie.id ?? nouvelId()
+      await db.camp.put({
+        id, ville_id: existe?.ville_id ?? nouvelId(), nom: saisie.nom.trim(), date_debut: saisie.date_debut, date_fin: saisie.date_fin,
+        lieu: saisie.lieu?.trim() || undefined, statut: saisie.statut ?? existe?.statut ?? 'preparation',
+        ville: saisie.ville.trim(), pays: saisie.pays_nom, pays_code: saisie.pays_code,
+      })
+      return id
     },
 
     // ---------------------------------------------------------------- Référentiels

@@ -135,7 +135,7 @@ function QuestionPilotee({ etat, tentativeId, onEnvoyee }: { etat: EtatPilote; t
 
   return (
     <div className="question">
-      <ChronoPartage lanceeLe={s.question_lancee_le!} duree={q.duree_secondes} libelle={t.secondes} onFin={() => setExpire(true)} />
+      <ChronoPartage lanceeLe={s.question_lancee_le!} duree={q.duree_secondes} decalage={etat.decalage_ms} libelle={t.secondes} onFin={() => setExpire(true)} />
       <p className="question-numero">{t.question(etat.index + 1, etat.questions.length)}</p>
       <h1 className="enonce">{traduire(q, 'enonce', langue)}</h1>
       {q.image && <figure className="question-illustration"><img src={q.image} alt="" /></figure>}

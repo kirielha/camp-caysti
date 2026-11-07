@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ChronoPartage } from '../components/ChronoPartage'
-import { repo, staff } from '../data'
+import { staff } from '../data'
 import { DELAI_GRACE_MS } from '../data/localRepository'
 import { ErreurDroits, type ActionPilote } from '../data/staffRepository'
 import { estNotee } from '../lib/scoring'
@@ -27,19 +27,19 @@ export function AnimationDirect() {
 
   const charger = useCallback(async () => {
     if (!moi) return
-    const e = await repo.etatPilote(sessionId)
+    const e = await staff.etatPilote(sessionId)
     setEtat(e)
     const d = await staff.detailGroupe(e.detail.groupe.id, moi)
     setNbInscrits(d.nb_eleves)
     setAtelierEnCours(d.groupe.statut === 'en_cours')
     if (e.detail.session.etape === 'classement' || e.detail.session.etape === 'terminee' || e.detail.session.etape === 'revelation') {
-      setTop(e.detail.session.etape === 'terminee' ? await repo.classement(sessionId, 10) : await repo.classementEnDirect(sessionId, 10))
+      setTop(e.detail.session.etape === 'terminee' ? await staff.classement(sessionId, 10) : await staff.classementEnDirect(sessionId, 10))
     }
   }, [sessionId, moi])
 
   useEffect(() => {
     void charger()
-    return repo.surveillerSession(sessionId, () => void charger())
+    return staff.surveillerSession(sessionId, () => void charger())
   }, [sessionId, charger])
 
   const agir = useCallback(async (action: ActionPilote) => {
@@ -96,6 +96,7 @@ export function AnimationDirect() {
         <div className="animation-question">
           <ChronoPartage
             lanceeLe={s.question_lancee_le}
+            decalage={etat.decalage_ms}
             duree={q.duree_secondes}
             libelle={(n) => `${n} s`}
             // fin du chrono : révélation automatique, après la petite marge accordée aux élèves

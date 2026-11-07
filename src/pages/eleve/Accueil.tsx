@@ -18,7 +18,9 @@ export function Accueil() {
     const complets = await Promise.all(
       liste.map(async (a) => {
         const nbQuestions: Record<string, number> = {}
-        for (const s of a.activites) nbQuestions[s.session.id] = (await repo.chargerSession(s.session.id)).questions.length
+        for (const s of a.activites) {
+          nbQuestions[s.session.id] = s.nb_questions ?? (await repo.chargerSession(s.session.id)).questions.length
+        }
         return { ...a, nbQuestions }
       }),
     )

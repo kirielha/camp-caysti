@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { db, repo } from '../../data'
+import { db, modeDemo, repo } from '../../data'
+import { ErreurMetier } from '../../data/repository'
 import { normaliserCode } from '../../data/localRepository'
 import { CODES_DEMO, reinitialiserDemo } from '../../data/seed'
 import { useCamp } from '../../contexte'
 
-const modeLocal = (import.meta.env.VITE_DATA_BACKEND ?? 'local') === 'local'
 
 export function Connexion() {
   const { eleve, connecter, t } = useCamp()
@@ -21,7 +21,14 @@ export function Connexion() {
     const c = normaliserCode(code)
     if (c.length !== 6) return setErreur(t.codeCourt)
     setEnvoi(true)
-    const trouve = await repo.trouverEleveParCode(c)
+    let trouve
+    try {
+      trouve = await repo.trouverEleveParCode(c)
+    } catch (err) {
+      setEnvoi(false)
+      const code = err instanceof ErreurMetier ? err.code : undefined
+      return setErreur(code === 'trop_essais' ? t.tropEssais : code === 'reseau' ? t.pasDeReseau : t.erreurServeur)
+    }
     setEnvoi(false)
     if (!trouve) return setErreur(t.codeInconnu)
     connecter(trouve)
@@ -53,7 +60,7 @@ export function Connexion() {
 
       <p className="lien-staff"><Link className="lien lien-discret" to="/formateur">Espace formateur</Link></p>
 
-      {modeLocal && (
+      {modeDemo && (
         <aside className="demo">
           <p>{t.demoCodes}</p>
           <div className="demo-codes">

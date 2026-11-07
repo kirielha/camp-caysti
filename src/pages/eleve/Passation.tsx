@@ -8,7 +8,7 @@ import type { QuestionAvecChoix, SessionPourEleve, Tentative } from '../../types
 import { Chrono } from '../../components/Chrono'
 import { PassationPilotee } from './PassationPilotee'
 
-type Phase = 'chargement' | 'consignes' | 'question' | 'envoi' | 'fermee' | 'pilote'
+type Phase = 'chargement' | 'consignes' | 'question' | 'envoi' | 'fermee' | 'pilote' | 'attente_reseau'
 
 export function Passation() {
   const { sessionId = '' } = useParams()
@@ -58,9 +58,22 @@ export function Passation() {
   const terminer = useCallback(async () => {
     if (!tentative) return
     setPhase('envoi')
-    const { tentative: finie, en_attente } = await repo.soumettreTentative(tentative.id)
-    naviguer(`/eleve/session/${sessionId}/resultat`, { replace: true, state: { tentative: finie, en_attente } })
+    try {
+      const { tentative: finie, en_attente } = await repo.soumettreTentative(tentative.id)
+      naviguer(`/eleve/session/${sessionId}/resultat`, { replace: true, state: { tentative: finie, en_attente } })
+    } catch {
+      // réseau coupé : les réponses restent sur la tablette ; nouvel essai automatique ou à la demande
+      setPhase('attente_reseau')
+    }
   }, [tentative, naviguer, sessionId])
+
+  useEffect(() => {
+    if (phase !== 'attente_reseau') return
+    const id = setInterval(() => void terminer(), 10_000)
+    const auRetour = () => void terminer()
+    window.addEventListener('online', auRetour)
+    return () => { clearInterval(id); window.removeEventListener('online', auRetour) }
+  }, [phase, terminer])
 
   const suivante = useCallback(async () => {
     const prochain = index + 1
@@ -103,6 +116,14 @@ export function Passation() {
   }
 
   if (phase === 'envoi') return <p className="aide">{t.chargement}</p>
+  if (phase === 'attente_reseau') {
+    return (
+      <section className="attente-reseau" role="status">
+        <p className="pilote-message">{t.reponsesPasEnvoyees}</p>
+        <button type="button" className="bouton bouton-principal bouton-large" onClick={() => void terminer()}>{t.reessayer}</button>
+      </section>
+    )
+  }
 
   const q = questions[index]
   return (
