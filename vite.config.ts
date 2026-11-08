@@ -33,5 +33,7 @@ export default defineConfig(({ mode }) => ({
   ],
   test: {
     environment: 'node',
+    // les tests tournent toujours sur le stockage local, même si .env pointe vers Supabase
+    env: { VITE_DATA_BACKEND: 'local' },
   },
 }))
