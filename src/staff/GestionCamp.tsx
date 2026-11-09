@@ -8,8 +8,9 @@ import { useStaff } from './contexteStaff'
 import { OngletAteliers } from './gestion/OngletAteliers'
 import { OngletEleves } from './gestion/OngletEleves'
 import { OngletImport } from './gestion/OngletImport'
+import { OngletResultats } from './gestion/OngletResultats'
 
-type Onglet = 'ateliers' | 'eleves' | 'import'
+type Onglet = 'ateliers' | 'eleves' | 'import' | 'resultats'
 
 /** Pays proposés à la création d'un camp (code ISO, nom). */
 const PAYS: [string, string][] = [
@@ -123,12 +124,13 @@ export function GestionCamp() {
       {camp && (
         <>
           <div className="onglets" role="tablist">
-            {([['ateliers', 'Ateliers et groupes'], ['eleves', 'Élèves'], ['import', 'Importer un fichier Excel']] as [Onglet, string][]).map(([id, libelle]) => (
+            {([['ateliers', 'Ateliers et groupes'], ['eleves', 'Élèves'], ['import', 'Importer un fichier Excel'], ['resultats', 'Résultats']] as [Onglet, string][]).map(([id, libelle]) => (
               <button key={id} type="button" role="tab" aria-selected={onglet === id} onClick={() => setOnglet(id)}>{libelle}</button>
             ))}
           </div>
           {onglet === 'ateliers' && <OngletAteliers key={`a${version}${camp.id}`} camp={camp} />}
           {onglet === 'eleves' && <OngletEleves key={`e${version}${camp.id}`} camp={camp} />}
+          {onglet === 'resultats' && <OngletResultats key={`r${version}${camp.id}`} camp={camp} />}
           {onglet === 'import' && <OngletImport key={camp.id} camp={camp} onImporte={() => { rafraichir(); setOnglet('eleves') }} />}
         </>
       )}

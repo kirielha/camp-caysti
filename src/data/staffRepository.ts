@@ -4,9 +4,15 @@
 import type { LigneImport } from '../lib/importEleves'
 import type {
   Atelier, AtelierDuCamp, Camp, Choix, Competence, DetailGroupe, Ecole, Eleve, EleveDuCamp, Fiche, Groupe,
-  EtatPilote, GroupePourFormateur, LangueParlee, LigneClassement, LigneResultat, ModeSession, Personnel, Question, QuestionAvecChoix, Role,
+  EtatPilote, GroupePourFormateur, LangueParlee, LigneClassement, LigneExport, LigneResultat, ModeSession, PartieAvecRessources, Personnel, Question, QuestionAvecChoix, Role,
   SessionPourEleve, StatutGroupe, StatutSession, Technologie, Tuteur, Utilisateur,
 } from '../types'
+
+/** Partie en cours d'édition : ses ressources n'ont pas encore d'identifiant. */
+export interface SaisiePartie {
+  partie: Omit<PartieAvecRessources['partie'], 'id'> & { id?: string }
+  ressources: { titre: string; langage?: string; contenu: string }[]
+}
 
 /** Question telle qu'éditée dans l'éditeur de fiches (avec ses choix). */
 export interface QuestionEditable extends Omit<Question, 'auteur_id'> {
@@ -80,7 +86,7 @@ export interface StaffRepository {
    */
   piloter(sessionId: string, action: ActionPilote, personnel: Personnel): Promise<void>
   /** Programme une fiche dans un groupe (session en brouillon, à ouvrir le moment venu). */
-  ajouterActivite(groupeId: string, ficheId: string, personnel: Personnel): Promise<void>
+  ajouterActivite(groupeId: string, ficheId: string, personnel: Personnel, partieId?: string): Promise<void>
   retirerActivite(sessionId: string, personnel: Personnel): Promise<void>
 
   // ---------- Banque de fiches ----------
@@ -101,6 +107,15 @@ export interface StaffRepository {
   /** Crée ou met à jour un groupe et remplace la liste de ses formateurs. */
   enregistrerGroupe(groupe: Omit<Groupe, 'statut'> & { statut?: Groupe['statut'] }, formateurs: { utilisateur_id: string; role: 'principal' | 'secondaire' }[], personnel: Personnel): Promise<void>
   supprimerGroupe(groupeId: string, personnel: Personnel): Promise<void>
+  /**
+   * Crée ou modifie une partie d'atelier et remplace ses ressources. Ses fiches (validées) deviennent
+   * des activités fermées de chaque groupe de l'atelier, y compris des groupes créés plus tard. Renvoie l'id.
+   */
+  enregistrerPartie(saisie: SaisiePartie, personnel: Personnel): Promise<string>
+  /** Supprime la partie ; ses activités pas encore commencées sont retirées des groupes. */
+  supprimerPartie(partieId: string, personnel: Personnel): Promise<void>
+  /** Résultats du camp : un élève inscrit × une activité notée (prétest, quiz, post-test). */
+  exportResultats(campId: string, personnel: Personnel): Promise<LigneExport[]>
   formateurs(): Promise<Utilisateur[]>
   elevesDuCamp(campId: string): Promise<EleveDuCamp[]>
   /** Crée ou met à jour un élève, son parent, et remplace ses inscriptions aux groupes de ce camp. */

@@ -2,16 +2,15 @@ import { liveQuery } from 'dexie'
 import { classer } from '../lib/ranking'
 import { noterReponse, tempsPilote, totaliser } from '../lib/scoring'
 import { nouvelId } from '../lib/ids'
-import type { AtelierPourEleve, Eleve, Langue, Progression, QuestionAvecChoix, Reponse, SessionPourEleve, Tentative, TypeFiche } from '../types'
+import type { AtelierPourEleve, Eleve, Langue, Progression, QuestionAvecChoix, Reponse, SessionPourEleve, Tentative } from '../types'
 import type { BaseCamp } from './db'
 import { ErreurMetier, type Repository } from './repository'
+import { comparerActivites, ordreDesParties, partiesDe } from './localParties'
 
 const maintenant = () => new Date().toISOString()
 /** Ordre des activités dans un atelier : prétest, quiz, post-test, avis. */
 /** Marge accordée après la fin du chrono d'une question pilotée (latence du réseau, de l'écran). */
 export const DELAI_GRACE_MS = 1500
-
-const ORDRE_DEROULE: Record<TypeFiche, number> = { pretest: 0, quiz: 1, posttest: 2, satisfaction: 3 }
 
 export const normaliserCode = (code: string) => code.replace(/\s+/g, '').toUpperCase()
 
@@ -68,7 +67,7 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
     async ateliersPourEleve(eleveId) {
       const inscriptions = await db.inscription.where('eleve_id').equals(eleveId).toArray()
       const resultats = await Promise.all(
-        inscriptions.map(async (insc) => {
+        inscriptions.map(async (insc): Promise<AtelierPourEleve | undefined> => {
           const groupe = await db.groupe.get(insc.groupe_id)
           const atelier = groupe && (await db.atelier.get(groupe.atelier_id))
           const technologie = atelier && (await db.technologie.get(atelier.technologie_id))
@@ -82,8 +81,9 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
               return d
             }),
           )
-          activites.sort((a, b) => ORDRE_DEROULE[a.fiche.type] - ORDRE_DEROULE[b.fiche.type])
-          return { atelier, groupe, technologie, activites }
+          activites.sort(comparerActivites(await ordreDesParties(db, atelier.id)))
+          const parties = await partiesDe(db, atelier.id, groupe.statut !== 'a_venir')
+          return { atelier, groupe, technologie, parties, activites }
         }),
       )
       return resultats
@@ -99,7 +99,8 @@ export function creerRepositoryLocal(db: BaseCamp): Repository {
       const session = await db.session_evaluation.get(sessionId)
       if (!session) return {}
       // pré et post-tests du même groupe (donc du même atelier)
-      const duGroupe = await db.session_evaluation.where('groupe_id').equals(session.groupe_id).toArray()
+      const duGroupe = (await db.session_evaluation.where('groupe_id').equals(session.groupe_id).toArray())
+        .filter((s) => (s.partie_id ?? '') === (session.partie_id ?? '')) // même partie de l'atelier
       const resultat: Progression = {}
       for (const s of duGroupe) {
         const fiche = await db.fiche.get(s.fiche_id)

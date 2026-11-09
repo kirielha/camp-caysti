@@ -5,7 +5,7 @@
 import Dexie, { type Table } from 'dexie'
 import type {
   Atelier, AttributionRole, Camp, Choix, Competence, Eleve, Fiche, FicheQuestion, Groupe, GroupeFormateur,
-  Ecole, EleveTuteur, Inscription, LangueParlee, LotImport, ParticipantSession, Question, Reponse, SessionEvaluation, Technologie, Tentative, Tuteur, Utilisateur,
+  Ecole, EleveTuteur, Inscription, LangueParlee, LotImport, ParticipantSession, Partie, Question, Ressource, Reponse, SessionEvaluation, Technologie, Tentative, Tuteur, Utilisateur,
 } from '../types'
 
 export class BaseCamp extends Dexie {
@@ -32,6 +32,8 @@ export class BaseCamp extends Dexie {
   eleve_tuteur!: Table<EleveTuteur, [string, string]>
   lot_import!: Table<LotImport, string>
   participant_session!: Table<ParticipantSession, [string, string]>
+  partie!: Table<Partie, string>
+  ressource!: Table<Ressource, string>
 
   constructor(nom = 'camp-caysti') {
     super(nom)
@@ -70,6 +72,12 @@ export class BaseCamp extends Dexie {
     // v4 : participants des sessions en mode piloté
     this.version(4).stores({
       participant_session: '[session_id+eleve_id], session_id',
+    })
+    // v5 : parties d'atelier et ressources (code source à copier)
+    this.version(5).stores({
+      partie: 'id, atelier_id',
+      ressource: 'id, partie_id',
+      session_evaluation: 'id, groupe_id, fiche_id, statut, partie_id',
     })
   }
 }

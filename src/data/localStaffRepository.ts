@@ -2,8 +2,9 @@ import { estAdmin, estAdminCamp, ficheVisible, nomComplet, peutModifierFiche, pe
 import { nouvelId } from '../lib/ids'
 import { genererCode, normaliser } from '../lib/importEleves'
 import { tempsPilote, totaliser } from '../lib/scoring'
-import type { AtelierDuCamp, Choix, Eleve, EleveDuCamp, Fiche, GroupePourFormateur, Personnel, Question, Utilisateur } from '../types'
+import type { AtelierDuCamp, Choix, Eleve, EleveDuCamp, Fiche, GroupePourFormateur, LigneExport, Personnel, Question, Utilisateur } from '../types'
 import type { BaseCamp } from './db'
+import { appliquerDeroule, comparerActivites, ordreDesParties, partiesDe } from './localParties'
 import { creerRepositoryLocal } from './localRepository'
 import { ErreurDroits, type FicheEditable, type StaffRepository } from './staffRepository'
 
@@ -121,7 +122,6 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
         .sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom))
 
       const sessions = await db.session_evaluation.where('groupe_id').equals(groupeId).toArray()
-      const ordre = { pretest: 0, quiz: 1, posttest: 2, satisfaction: 3 }
       const activites = (await Promise.all(sessions.map(async (session) => {
         const fiche = await db.fiche.get(session.fiche_id)
         if (!fiche) return undefined
@@ -133,10 +133,11 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
           nb_en_cours: tentatives.filter((t) => t.statut === 'en_cours').length,
         }
       }))).filter((a): a is NonNullable<typeof a> => !!a)
-        .sort((a, b) => ordre[a.fiche.type] - ordre[b.fiche.type])
+        .sort(comparerActivites(await ordreDesParties(db, ctx.atelier.id)))
 
       const role = affectations.find((a) => a.utilisateur_id === p.id)?.role
-      return { ...ctx, role, nb_eleves: eleves.length, formateurs, eleves, activites }
+      const parties = await partiesDe(db, ctx.atelier.id)
+      return { ...ctx, role, nb_eleves: eleves.length, formateurs, eleves, parties, activites }
     },
 
     async resultatsSession(sessionId) {
@@ -242,13 +243,17 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
       await db.session_evaluation.update(sessionId, { classement_affiche: affiche })
     },
 
-    async ajouterActivite(groupeId, ficheId, p) {
+    async ajouterActivite(groupeId, ficheId, p, partieId) {
       await verifierPilotage(groupeId, p)
       const fiche = await db.fiche.get(ficheId)
       if (!fiche) throw new Error('Fiche introuvable')
       if (!peutProgrammer(fiche, p)) throw new ErreurDroits('Cette fiche doit d’abord être validée par un admin')
+      if (partieId) {
+        const [partie, groupe] = await Promise.all([db.partie.get(partieId), db.groupe.get(groupeId)])
+        if (!partie || partie.atelier_id !== groupe?.atelier_id) throw new ErreurDroits('Cette partie n’appartient pas à l’atelier')
+      }
       await db.session_evaluation.add({
-        id: nouvelId(), fiche_id: ficheId, groupe_id: groupeId, mode: 'libre', mode_correction: fiche.mode_correction,
+        id: nouvelId(), fiche_id: ficheId, groupe_id: groupeId, partie_id: partieId, mode: 'libre', mode_correction: fiche.mode_correction,
         statut: 'brouillon', classement_affiche: fiche.type !== 'satisfaction', etape: 'attente',
       })
     },
@@ -395,7 +400,7 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
         const groupes = (await db.groupe.where('atelier_id').equals(atelier.id).toArray())
           .sort((a, b) => `${a.date} ${a.heure_debut}`.localeCompare(`${b.date} ${b.heure_debut}`))
         resultat.push({
-          atelier, technologie,
+          atelier, technologie, parties: await partiesDe(db, atelier.id),
           groupes: await Promise.all(groupes.map(async (groupe) => {
             const aff = await db.groupe_formateur.where('groupe_id').equals(groupe.id).toArray()
             const formateurs = (await Promise.all(aff.map(async (a) => {
@@ -429,6 +434,73 @@ export function creerStaffRepositoryLocal(db: BaseCamp): StaffRepository {
         const uniques = new Map(formateurs.map((f) => [f.utilisateur_id, f]))
         await db.groupe_formateur.bulkAdd([...uniques.values()].map((f) => ({ id: nouvelId(), groupe_id: groupe.id, ...f })))
       })
+      if (!avant) await appliquerDeroule(db, groupe.id) // un nouveau groupe reçoit le déroulé des parties
+    },
+
+    async enregistrerPartie({ partie, ressources }, p) {
+      const atelier = await db.atelier.get(partie.atelier_id)
+      if (!atelier || !estAdminCamp(p, atelier.camp_id)) throw new ErreurDroits('Seul un admin du camp gère les parties')
+      if (!partie.titre_fr.trim()) throw new ErreurDroits('Donnez un titre à la partie')
+      const attendus = [['pretest', partie.fiche_pretest_id], ['quiz', partie.fiche_quiz_id], ['posttest', partie.fiche_posttest_id]] as const
+      for (const [type, id] of attendus) {
+        if (!id) continue
+        const fiche = await db.fiche.get(id)
+        if (fiche?.statut_validation !== 'validee') throw new ErreurDroits('Choisissez des fiches validées par un admin')
+        if (fiche.type !== type) throw new ErreurDroits('Chaque case attend une fiche du bon type (prétest, quiz, post-test)')
+      }
+      const id = partie.id ?? nouvelId()
+      await db.transaction('rw', [db.partie, db.ressource], async () => {
+        await db.partie.put({ ...partie, id, titre_fr: partie.titre_fr.trim(), titre_en: partie.titre_en?.trim() || undefined })
+        await db.ressource.where('partie_id').equals(id).delete()
+        await db.ressource.bulkAdd(ressources
+          .map((r, i) => ({ r, i }))
+          .filter(({ r }) => r.contenu.trim())
+          .map(({ r, i }) => ({ id: nouvelId(), partie_id: id, ordre: i + 1, titre: r.titre.trim() || `Code ${i + 1}`, langage: r.langage?.trim() || undefined, contenu: r.contenu })))
+      })
+      for (const g of await db.groupe.where('atelier_id').equals(partie.atelier_id).toArray()) await appliquerDeroule(db, g.id)
+      return id
+    },
+
+    async supprimerPartie(partieId, p) {
+      const partie = await db.partie.get(partieId)
+      if (!partie) return
+      const atelier = await db.atelier.get(partie.atelier_id)
+      if (!atelier || !estAdminCamp(p, atelier.camp_id)) throw new ErreurDroits('Seul un admin du camp gère les parties')
+      for (const s of await db.session_evaluation.where('partie_id').equals(partieId).toArray()) {
+        if (await db.tentative.where('session_id').equals(s.id).count()) await db.session_evaluation.update(s.id, { partie_id: undefined })
+        else await db.session_evaluation.delete(s.id)
+      }
+      await db.ressource.where('partie_id').equals(partieId).delete()
+      await db.partie.delete(partieId)
+    },
+
+    async exportResultats(campId, p) {
+      if (!estAdminCamp(p, campId)) throw new ErreurDroits('Réservé aux admins de ce camp')
+      const lignes: LigneExport[] = []
+      for (const atelier of await db.atelier.where('camp_id').equals(campId).toArray()) {
+        const parties = new Map((await db.partie.where('atelier_id').equals(atelier.id).toArray()).map((x) => [x.id, x]))
+        for (const groupe of await db.groupe.where('atelier_id').equals(atelier.id).toArray()) {
+          const sessions = await db.session_evaluation.where('groupe_id').equals(groupe.id).toArray()
+          const fiches = new Map((await db.fiche.bulkGet(sessions.map((s) => s.fiche_id))).filter((f): f is Fiche => !!f).map((f) => [f.id, f]))
+          for (const i of await db.inscription.where('groupe_id').equals(groupe.id).toArray()) {
+            const eleve = await db.eleve.get(i.eleve_id)
+            if (!eleve) continue
+            const ecole = eleve.ecole_id ? (await db.ecole.get(eleve.ecole_id))?.nom : undefined
+            for (const s of sessions) {
+              const fiche = fiches.get(s.fiche_id)
+              if (!fiche || fiche.type === 'satisfaction') continue
+              const t = await db.tentative.where('[session_id+eleve_id]').equals([s.id, eleve.id]).first()
+              const partie = s.partie_id ? parties.get(s.partie_id) : undefined
+              lignes.push({
+                eleve, ecole, atelier: atelier.titre_fr, groupe: groupe.nom, date: groupe.date,
+                partie: partie?.titre_fr, partie_ordre: partie?.ordre, type: fiche.type, fiche: fiche.titre_fr,
+                score: t?.score, score_max: t?.score_max, temps_total_ms: t?.temps_total_ms, statut: t?.statut,
+              })
+            }
+          }
+        }
+      }
+      return lignes
     },
 
     async supprimerGroupe(groupeId, p) {

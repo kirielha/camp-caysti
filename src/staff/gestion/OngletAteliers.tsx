@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { staff } from '../../data'
-import { ErreurDroits } from '../../data/staffRepository'
+import { ErreurDroits, type ResumeFiche } from '../../data/staffRepository'
+import { telechargerCodes } from '../../lib/exportsExcel'
 import { nomComplet } from '../../lib/droits'
 import { nouvelId } from '../../lib/ids'
 import type { AtelierDuCamp, Camp, Groupe, Technologie, Utilisateur } from '../../types'
 import { useStaff } from '../contexteStaff'
 import { jourCourt, libelleStatutGroupe } from '../libelles'
+import { PartiesAtelier } from './PartiesAtelier'
 
 type GroupeEnEdition = { groupe: Omit<Groupe, 'statut'> & { statut?: Groupe['statut'] }; principal: string; secondaires: string[] }
 
@@ -14,6 +16,7 @@ export function OngletAteliers({ camp }: { camp: Camp }) {
   const [structure, setStructure] = useState<AtelierDuCamp[]>()
   const [technos, setTechnos] = useState<Technologie[]>([])
   const [formateurs, setFormateurs] = useState<Utilisateur[]>([])
+  const [fiches, setFiches] = useState<ResumeFiche[]>([])
   const [edition, setEdition] = useState<GroupeEnEdition>()
   const [nouvelAtelier, setNouvelAtelier] = useState<{ technologie_id: string; titre_fr: string; titre_en: string }>()
   const [erreur, setErreur] = useState<string>()
@@ -24,6 +27,7 @@ export function OngletAteliers({ camp }: { camp: Camp }) {
     staff.technologies().then(setTechnos)
     staff.formateurs().then(setFormateurs)
   }, [charger])
+  useEffect(() => { if (moi) staff.fichesVisibles(moi).then(setFiches) }, [moi])
 
   if (!moi || !structure) return <p className="aide">Chargement…</p>
 
@@ -57,6 +61,8 @@ export function OngletAteliers({ camp }: { camp: Camp }) {
             </div>
             <button type="button" className="bouton" onClick={() => editerGroupe(a.atelier.id)}>Ajouter un groupe</button>
           </header>
+          <PartiesAtelier a={a} fiches={fiches} moi={moi} onChange={charger} />
+          <p className="sous-titre-gestion">Groupes</p>
           {a.groupes.length === 0 && <p className="aide">Aucun groupe : ajoutez-en un pour y inscrire des élèves.</p>}
           <ul className="groupes-gestion">
             {a.groupes.map((g) => (
@@ -77,6 +83,12 @@ export function OngletAteliers({ camp }: { camp: Camp }) {
                       </p>
                     </div>
                     <div className="groupe-gestion-actions">
+                      {g.nb_eleves > 0 && (
+                        <button type="button" className="lien" onClick={() => agir(async () => {
+                          const d = await staff.detailGroupe(g.groupe.id, moi)
+                          await telechargerCodes(d.eleves, a.atelier.titre_fr, g.groupe.nom, g.groupe.date)
+                        })}>Codes (Excel)</button>
+                      )}
                       <button type="button" className="lien" onClick={() => editerGroupe(a.atelier.id, g)}>Modifier</button>
                       <button type="button" className="lien lien-danger" onClick={() => agir(() => staff.supprimerGroupe(g.groupe.id, moi))}>Supprimer</button>
                     </div>

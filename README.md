@@ -74,6 +74,8 @@ Les écrans ne parlent qu'aux contrats `Repository` et `StaffRepository`. `VITE_
 - **Tablettes partagées** : l'élève connecté est oublié à la fermeture de l'onglet.
 - **Atelier verrouillé** tant que le formateur ne l'a pas démarré (contrôlé aussi en base, migration 0003) ; activité grisée tant qu'elle n'est pas ouverte.
 - **Fiches** : brouillon privé ou partagé → soumise → validée (officielle) ou renvoyée avec remarque. Une fiche officielle ou déjà passée par des élèves ne se modifie plus : on la duplique.
+- **Parties d’atelier** : un atelier se découpe en parties (ex. IoT puis Programmation), chacune avec son prétest, son quiz et son post-test et du code à copier. Les fiches d’une partie s’ajoutent, fermées, à chaque groupe de l’atelier (y compris les groupes créés ensuite) ; le coach les ouvre au moment voulu. La progression se calcule par partie.
+- **Exports Excel** : liste des codes par groupe ; résultats du camp (synthèse par partie et détail par élève : prétest, quiz, post-test en %, progression en points).
 - **Programmation** : un formateur programme les fiches officielles, ou ses propres brouillons pour les essayer avec son groupe.
 - **Mode piloté** : le formateur lance chaque question ; le chrono de tous les écrans part de l'heure de lancement. Une seule réponse par question, refusée après la fin du chrono (marge de 1,5 s) ou après la révélation. Une question manquée compte pour toute sa durée dans le départage. Les retardataires peuvent rejoindre la partie en cours. En local, les écrans se synchronisent entre onglets du même navigateur ; avec Supabase, ce sera un canal temps réel (même contrat `surveillerSession`).
 - **Import Excel** : aperçu ligne par ligne avant tout enregistrement ; élèves déjà connus rattachés (même code), doublons du fichier signalés, écoles inconnues créées une seule fois.
@@ -99,7 +101,7 @@ git push -u origin main
 ### 1. Projet Supabase
 
 1. Créer le projet (région Europe : Francfort ou Paris).
-2. **SQL Editor** : exécuter dans l'ordre, chacun en entier, `supabase/migrations/0001_schema.sql` à `0007_droits_et_donnees.sql`.
+2. **SQL Editor** : exécuter dans l'ordre, chacun en entier, `supabase/migrations/0001_schema.sql` à `0008_parties.sql`.
 3. **Authentication > Sign In / Providers** : activer *Allow anonymous sign-ins* (connexion des élèves) et laisser *Email* activé (personnel).
 4. **Authentication > URL Configuration** :
    - Site URL : `https://<compte>.github.io/<depot>/`

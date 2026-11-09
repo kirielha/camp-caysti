@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { repo } from '../../data'
 import { useCamp } from '../../contexte'
 import { traduire } from '../../i18n/textes'
-import type { AtelierPourEleve, SessionPourEleve } from '../../types'
+import { BlocCode } from '../../components/BlocCode'
+import type { AtelierPourEleve, PartieAvecRessources, SessionPourEleve } from '../../types'
 
 type AtelierAffiche = AtelierPourEleve & { nbQuestions: Record<string, number> }
 
@@ -77,16 +78,52 @@ function BlocAtelier({ a }: { a: AtelierAffiche }) {
       {statut === 'a_venir' && <p className="atelier-message">{t.atelierPasCommence(a.groupe.heure_debut)}</p>}
       {statut === 'termine' && <p className="atelier-message">{t.atelierTermine}</p>}
 
-      <Progression atelier={a} />
-
-      {a.activites.length === 0 ? (
+      {a.activites.length === 0 && !a.parties?.length ? (
         <p className="aide atelier-vide">{t.aucuneActivite}</p>
       ) : (
-        <ul className="activites">
-          {a.activites.map((s) => <Activite key={s.session.id} s={s} a={a} nb={a.nbQuestions[s.session.id] ?? 0} />)}
-        </ul>
+        <>
+          {(a.parties ?? []).map((p, i) => (
+            <SectionPartie key={p.partie.id} p={p} numero={i + 1} a={a}
+              activites={a.activites.filter((s) => s.session.partie_id === p.partie.id)} />
+          ))}
+          {sansPartie(a).length > 0 && (
+            <section className="partie">
+              {(a.parties ?? []).length > 0 && <h3 className="partie-titre">{t.autresActivites}</h3>}
+              <Progression activites={sansPartie(a)} />
+              <ul className="activites">
+                {sansPartie(a).map((s) => <Activite key={s.session.id} s={s} a={a} nb={a.nbQuestions[s.session.id] ?? 0} />)}
+              </ul>
+            </section>
+          )}
+        </>
       )}
     </article>
+  )
+}
+
+const sansPartie = (a: AtelierPourEleve) => {
+  const ids = new Set((a.parties ?? []).map((p) => p.partie.id))
+  return a.activites.filter((s) => !s.session.partie_id || !ids.has(s.session.partie_id))
+}
+
+function SectionPartie({ p, numero, a, activites }: { p: PartieAvecRessources; numero: number; a: AtelierAffiche; activites: SessionPourEleve[] }) {
+  const { langue, t } = useCamp()
+  return (
+    <section className="partie">
+      <h3 className="partie-titre"><span className="partie-numero">{t.partie(numero)}</span> {traduire(p.partie, 'titre', langue)}</h3>
+      <Progression activites={activites} />
+      {activites.length > 0 && (
+        <ul className="activites">
+          {activites.map((s) => <Activite key={s.session.id} s={s} a={a} nb={a.nbQuestions[s.session.id] ?? 0} />)}
+        </ul>
+      )}
+      {p.ressources.length > 0 && (
+        <div className="ressources">
+          <p className="ressources-titre">{t.aCopier}</p>
+          {p.ressources.map((r) => <BlocCode key={r.id} r={r} libelles={t} />)}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -141,11 +178,11 @@ function Activite({ s, a, nb }: { s: SessionPourEleve; a: AtelierAffiche; nb: nu
   )
 }
 
-/** Bandeau de progression de l'atelier, affiché dès que prétest et post-test sont passés. */
-function Progression({ atelier }: { atelier: AtelierPourEleve }) {
+/** Bandeau de progression d'une partie, affiché dès que prétest et post-test sont passés. */
+function Progression({ activites }: { activites: SessionPourEleve[] }) {
   const { t } = useCamp()
   const res = (type: 'pretest' | 'posttest') => {
-    const tt = atelier.activites.find((s) => s.fiche.type === type)?.tentative
+    const tt = activites.find((s) => s.fiche.type === type)?.tentative
     return tt && tt.statut !== 'en_cours' ? tt : undefined
   }
   const pre = res('pretest')

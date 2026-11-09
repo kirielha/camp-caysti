@@ -4,6 +4,8 @@ import { staff } from '../data'
 import { ErreurDroits, type ResumeFiche } from '../data/staffRepository'
 import { nomComplet, peutProgrammer } from '../lib/droits'
 import type { ActiviteDuGroupe, DetailGroupe, StatutSession } from '../types'
+import { BlocCode } from '../components/BlocCode'
+import { telechargerCodes } from '../lib/exportsExcel'
 import { useStaff } from './contexteStaff'
 import { jourCourt, libelleStatutGroupe, libelleType } from './libelles'
 
@@ -37,9 +39,11 @@ export function PilotageGroupe() {
     try { await action(); await charger() } catch (e) { setErreur(e instanceof ErreurDroits ? e.message : 'L’action a échoué. Réessayez.') }
   }
 
-  const deja = new Set(d.activites.map((a) => a.fiche.id))
+  const idsParties = new Set((d.parties ?? []).map((p) => p.partie.id))
+  const autres = d.activites.filter((a) => !a.session.partie_id || !idsParties.has(a.session.partie_id))
+  const deja = new Set(d.activites.map((a) => `${a.fiche.id}|${a.session.partie_id ?? ''}`))
   const programmables = fiches
-    .filter((f) => peutProgrammer(f.fiche, moi) && !deja.has(f.fiche.id) && f.nb_questions > 0)
+    .filter((f) => peutProgrammer(f.fiche, moi) && f.nb_questions > 0)
     .sort((a, b) => Number(b.fiche.technologie_id === d.technologie.id) - Number(a.fiche.technologie_id === d.technologie.id))
 
   return (
@@ -93,18 +97,47 @@ export function PilotageGroupe() {
 
       <h2 className="titre-m">Activités</h2>
       {d.activites.length === 0 && <p className="vide">Aucune activité programmée. Ajoutez une fiche ci-dessous.</p>}
-      <ul className="liste-activites-staff">
-        {d.activites.map((a) => (
-          <LigneActivite key={a.session.id} a={a} nbEleves={d.nb_eleves} atelierEnCours={d.groupe.statut === 'en_cours'} agir={agir} />
-        ))}
-      </ul>
+      {(d.parties ?? []).map((p, i) => {
+        const liste = d.activites.filter((a) => a.session.partie_id === p.partie.id)
+        return (
+          <section key={p.partie.id} className="partie-staff">
+            <h3 className="titre-partie-staff">Partie {i + 1} : {p.partie.titre_fr}</h3>
+            {liste.length === 0 && <p className="aide">Aucune fiche pour cette partie.</p>}
+            <ul className="liste-activites-staff">
+              {liste.map((a) => (
+                <LigneActivite key={a.session.id} a={a} nbEleves={d.nb_eleves} atelierEnCours={d.groupe.statut === 'en_cours'} agir={agir} />
+              ))}
+            </ul>
+            {p.ressources.length > 0 && (
+              <details className="ressources">
+                <summary>Code à copier, vu par les élèves ({p.ressources.length})</summary>
+                {p.ressources.map((r) => <BlocCode key={r.id} r={r} libelles={{ copier: 'Copier', copie: 'Copié !', copieImpossible: 'Sélectionnez le texte et copiez-le' }} />)}
+              </details>
+            )}
+          </section>
+        )
+      })}
+      {autres.length > 0 && (
+        <>
+          {(d.parties ?? []).length > 0 && <h3 className="titre-partie-staff">Autres activités</h3>}
+          <ul className="liste-activites-staff">
+            {autres.map((a) => (
+              <LigneActivite key={a.session.id} a={a} nbEleves={d.nb_eleves} atelierEnCours={d.groupe.statut === 'en_cours'} agir={agir} />
+            ))}
+          </ul>
+        </>
+      )}
 
       <form
         className="programmer"
         onSubmit={(e) => {
           e.preventDefault()
-          const ficheId = new FormData(e.currentTarget).get('fiche') as string
-          if (ficheId) void agir(() => staff.ajouterActivite(d.groupe.id, ficheId, moi))
+          const donnees = new FormData(e.currentTarget)
+          const ficheId = donnees.get('fiche') as string
+          const partieId = (donnees.get('partie') as string) || undefined
+          if (!ficheId) return
+          if (deja.has(`${ficheId}|${partieId ?? ''}`)) { setErreur('Cette fiche est déjà programmée dans cette partie.'); return }
+          void agir(() => staff.ajouterActivite(d.groupe.id, ficheId, moi, partieId))
           e.currentTarget.reset()
         }}
       >
@@ -118,6 +151,12 @@ export function PilotageGroupe() {
               </option>
             ))}
           </select>
+          {(d.parties ?? []).length > 0 && (
+            <select name="partie" defaultValue={d.parties?.[0]?.partie.id} aria-label="Partie">
+              {d.parties?.map((p, i) => <option key={p.partie.id} value={p.partie.id}>Partie {i + 1} : {p.partie.titre_fr}</option>)}
+              <option value="">Hors partie</option>
+            </select>
+          )}
           <button className="bouton">Ajouter</button>
         </div>
         <p className="aide">L’activité est ajoutée fermée : ouvrez-la au moment voulu. <Link className="lien" to="/formateur/fiches">Créer une fiche</Link></p>
@@ -125,6 +164,11 @@ export function PilotageGroupe() {
 
       <details className="eleves-groupe">
         <summary>Élèves inscrits ({d.eleves.length})</summary>
+        {d.eleves.length > 0 && (
+          <button type="button" className="lien" onClick={() => void telechargerCodes(d.eleves, d.atelier.titre_fr, d.groupe.nom, d.groupe.date)}>
+            Télécharger la liste des codes (Excel)
+          </button>
+        )}
         <table className="tableau">
           <thead><tr><th>Élève</th><th>Classe</th><th>Code</th></tr></thead>
           <tbody>

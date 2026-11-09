@@ -15,4 +15,4 @@ PSQL=("$BIN/psql" -h "$DIR" -p "$PORT" -U postgres -v ON_ERROR_STOP=1 -q -X)
 "${PSQL[@]}" -f supabase/tests/00_simulation_supabase.sql
 for f in supabase/migrations/*.sql; do "${PSQL[@]}" -f "$f"; done
 "${PSQL[@]}" -f supabase/tests/01_outils.sql
-"${PSQL[@]}" -f supabase/tests/10_scenario.sql 2>&1 | sed 's/^psql:[^:]*:[0-9]*: //'
+cat supabase/tests/[1-9]*.sql | "${PSQL[@]}" -f - 2>&1 | sed 's/^psql:[^:]*:[0-9]*: //'

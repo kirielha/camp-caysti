@@ -44,6 +44,33 @@ export interface Atelier {
   image?: string
 }
 
+/** Partie d'un atelier (ex. « IoT » puis « Programmation »), avec son prétest, son quiz et son post-test. */
+export interface Partie {
+  id: string
+  atelier_id: string
+  ordre: number
+  titre_fr: string
+  titre_en?: string
+  fiche_pretest_id?: string
+  fiche_quiz_id?: string
+  fiche_posttest_id?: string
+}
+
+/** Code source ou texte à copier, rattaché à une partie. */
+export interface Ressource {
+  id: string
+  partie_id: string
+  ordre: number
+  titre: string
+  langage?: string
+  contenu: string
+}
+
+export interface PartieAvecRessources {
+  partie: Partie
+  ressources: Ressource[]
+}
+
 export interface Groupe {
   id: string
   atelier_id: string
@@ -211,6 +238,8 @@ export interface SessionEvaluation {
   id: string
   fiche_id: string
   groupe_id: string
+  /** Partie de l'atelier à laquelle appartient l'activité (aucune : activité générale). */
+  partie_id?: string
   mode: ModeSession
   mode_correction: ModeCorrection
   statut: StatutSession
@@ -280,6 +309,8 @@ export interface AtelierPourEleve {
   atelier: Atelier
   groupe: Groupe
   technologie: Technologie
+  /** Ressources vides tant que l'atelier n'a pas démarré. */
+  parties?: PartieAvecRessources[]
   activites: SessionPourEleve[]
 }
 
@@ -325,6 +356,7 @@ export interface ActiviteDuGroupe {
 export interface DetailGroupe extends GroupePourFormateur {
   formateurs: { utilisateur: Utilisateur; role: 'principal' | 'secondaire' }[]
   eleves: Eleve[]
+  parties?: PartieAvecRessources[]
   activites: ActiviteDuGroupe[]
 }
 
@@ -347,7 +379,25 @@ export interface EleveDuCamp {
 export interface AtelierDuCamp {
   atelier: Atelier
   technologie: Technologie
+  parties?: PartieAvecRessources[]
   groupes: { groupe: Groupe; formateurs: { utilisateur: Utilisateur; role: 'principal' | 'secondaire' }[]; nb_eleves: number }[]
+}
+
+/** Ligne d'export : un élève inscrit, une activité notée de son groupe, son résultat s'il l'a passée. */
+export interface LigneExport {
+  eleve: Eleve
+  ecole?: string
+  atelier: string
+  groupe: string
+  date: string
+  partie?: string
+  partie_ordre?: number
+  type: 'pretest' | 'quiz' | 'posttest'
+  fiche: string
+  score?: number
+  score_max?: number
+  temps_total_ms?: number
+  statut?: StatutTentative
 }
 
 // ---------------------------------------------------------------- Mode piloté

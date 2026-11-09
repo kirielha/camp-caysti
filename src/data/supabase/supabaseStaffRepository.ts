@@ -30,7 +30,7 @@ export function creerStaffRepositorySupabase(): StaffRepository {
     changerAffichageClassement: (sessionId, affiche) => rpc('changer_affichage_classement', { p_session: sessionId, p_affiche: affiche }),
     changerModeSession: (sessionId, mode) => rpc('changer_mode_session', { p_session: sessionId, p_mode: mode }),
     piloter: (sessionId, action) => rpc('piloter', { p_session: sessionId, p_action: action }),
-    ajouterActivite: (groupeId, ficheId) => rpc('ajouter_activite', { p_groupe: groupeId, p_fiche: ficheId }),
+    ajouterActivite: (groupeId, ficheId, _p, partieId) => rpc('ajouter_activite', { p_groupe: groupeId, p_fiche: ficheId, p_partie: partieId ?? null }),
     retirerActivite: (sessionId) => rpc('retirer_activite', { p_session: sessionId }),
 
     // ---------- Fiches
@@ -45,6 +45,9 @@ export function creerStaffRepositorySupabase(): StaffRepository {
 
     // ---------- Camp
     structureCamp: (campId) => rpc('structure_camp', { p_camp: campId }),
+    enregistrerPartie: (saisie) => rpc('enregistrer_partie', { p: saisie }),
+    supprimerPartie: (partieId) => rpc('supprimer_partie', { p_partie: partieId }),
+    exportResultats: (campId) => rpc('export_resultats', { p_camp: campId }),
     enregistrerAtelier: (atelier) => rpc('enregistrer_atelier', { p: atelier }),
     enregistrerGroupe: (groupe, formateurs) => rpc('enregistrer_groupe', { p_groupe: groupe, p_formateurs: formateurs }),
     supprimerGroupe: (groupeId) => rpc('supprimer_groupe', { p_groupe: groupeId }),
