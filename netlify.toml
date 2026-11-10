@@ -1,0 +1,17 @@
+# Publication sur Netlify (si github.io est bloqué par un réseau).
+# L'URL du projet et la clé publishable sont publiques par nature : jamais la clé secret / service_role ici.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_DATA_BACKEND = "supabase"
+  VITE_SUPABASE_URL = "https://honlfjupikkfyudxdlmi.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "sb_publishable_bXHn1FUU8IGiTPzbkh94CQ_t3QITggB"
+
+# Le service worker doit toujours être relu, pour que les mises à jour arrivent sur les tablettes
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
